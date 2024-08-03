@@ -22,9 +22,9 @@ import (
 
 // *nyalakan nginx dan database nya terlebih dahulu
 // go test -v ./test/integration -count=1 -p=1
-// go test -run ^TestIntegration_CreateUser$ -v ./test/integration -count=1
+// go test -run ^TestIntegration_Create$ -v ./test/integration -count=1
 
-type CreateUserTestSuite struct {
+type CreateTestSuite struct {
 	suite.Suite
 	grpcServer     *grpcapp.Server
 	userGrpcClient pb.UserServiceClient
@@ -37,7 +37,7 @@ type CreateUserTestSuite struct {
 	logger         *logrus.Logger
 }
 
-func (c *CreateUserTestSuite) SetupSuite() {
+func (c *CreateTestSuite) SetupSuite() {
 	grpcServer, postgresDb, redisDB, conf, logger := util.NewGrpcServer()
 	c.grpcServer = grpcServer
 	c.postgresDB = postgresDb
@@ -57,7 +57,7 @@ func (c *CreateUserTestSuite) SetupSuite() {
 	c.userGrpcConn = userGrpcConn
 }
 
-func (c *CreateUserTestSuite) TearDownSuite() {
+func (c *CreateTestSuite) TearDownSuite() {
 	c.grpcServer.Stop()
 	c.userGrpcConn.Close()
 
@@ -68,11 +68,11 @@ func (c *CreateUserTestSuite) TearDownSuite() {
 	sqlDB.Close()
 }
 
-func (c *CreateUserTestSuite) TearDownTest() {
+func (c *CreateTestSuite) TearDownTest() {
 	c.userTestUtil.Delete()
 }
 
-func (c *CreateUserTestSuite) Test_Success() {
+func (c *CreateTestSuite) Test_Success() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -90,7 +90,7 @@ func (c *CreateUserTestSuite) Test_Success() {
 	assert.NoError(c.T(), err)
 }
 
-func (c *CreateUserTestSuite) Test_WithouthUserId() {
+func (c *CreateTestSuite) Test_WithouthUserId() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -109,7 +109,7 @@ func (c *CreateUserTestSuite) Test_WithouthUserId() {
 	assert.Equal(c.T(), codes.InvalidArgument, st.Code())
 }
 
-func (c *CreateUserTestSuite) Test_AlreadyExists() {
+func (c *CreateTestSuite) Test_AlreadyExists() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -130,7 +130,7 @@ func (c *CreateUserTestSuite) Test_AlreadyExists() {
 	assert.Equal(c.T(), codes.AlreadyExists, st.Code())
 }
 
-func (c *CreateUserTestSuite) Test_Unauthenticated() {
+func (c *CreateTestSuite) Test_Unauthenticated() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -147,6 +147,6 @@ func (c *CreateUserTestSuite) Test_Unauthenticated() {
 	assert.Equal(c.T(), codes.Unauthenticated, st.Code())
 }
 
-func TestIntegration_CreateUser(t *testing.T) {
-	suite.Run(t, new(CreateUserTestSuite))
+func TestIntegration_Create(t *testing.T) {
+	suite.Run(t, new(CreateTestSuite))
 }

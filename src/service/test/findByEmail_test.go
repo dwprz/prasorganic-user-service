@@ -15,16 +15,16 @@ import (
 )
 
 // go test -v ./src/service/test/... -count=1 -p=1
-// go test -run ^TestService_FindUserByEmail$ -v ./src/service/test -count=1
+// go test -run ^TestService_FindByEmail$ -v ./src/service/test -count=1
 
-type FindUserByEmailTestSuite struct {
+type FindByEmailTestSuite struct {
 	suite.Suite
 	userService svcinterface.User
 	userRepo    *repository.UserMock
 	userCache   *cache.UserMock
 }
 
-func (f *FindUserByEmailTestSuite) SetupSuite() {
+func (f *FindByEmailTestSuite) SetupSuite() {
 	validator := validator.New()
 
 	// mock
@@ -35,7 +35,7 @@ func (f *FindUserByEmailTestSuite) SetupSuite() {
 	f.userService = service.NewUser(validator, f.userRepo, f.userCache)
 }
 
-func (f *FindUserByEmailTestSuite) Test_Succsess() {
+func (f *FindByEmailTestSuite) Test_Succsess() {
 	req := &entity.User{
 		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
@@ -43,24 +43,29 @@ func (f *FindUserByEmailTestSuite) Test_Succsess() {
 	}
 
 	f.userCache.Mock.On("FindByEmail", mock.Anything, req.Email).Return(req)
-	f.userRepo.Mock.On("FindByEmail", mock.Anything, req.Email).Return(req, nil)
+
+	f.userRepo.Mock.On("FindByFields", mock.Anything, &entity.User{
+		Email: req.Email,
+	}).Return(req, nil)
 
 	res, err := f.userService.FindByEmail(context.Background(), req.Email)
 	assert.NoError(f.T(), err)
 	assert.Equal(f.T(), req, res)
 }
 
-func (f *FindUserByEmailTestSuite) Test_NotFound() {
+func (f *FindByEmailTestSuite) Test_NotFound() {
 	email := "notfounduser@gmail.com"
 
 	f.userCache.Mock.On("FindByEmail", mock.Anything, email).Return(nil)
-	f.userRepo.Mock.On("FindByEmail", mock.Anything, email).Return(nil, nil)
+	f.userRepo.Mock.On("FindByFields", mock.Anything, &entity.User{
+		Email: email,
+	}).Return(nil, nil)
 
 	res, err := f.userService.FindByEmail(context.Background(), email)
 	assert.NoError(f.T(), err)
 	assert.Nil(f.T(), res)
 }
 
-func TestService_FindUserByEmail(t *testing.T) {
-	suite.Run(t, new(FindUserByEmailTestSuite))
+func TestService_FindByEmail(t *testing.T) {
+	suite.Run(t, new(FindByEmailTestSuite))
 }

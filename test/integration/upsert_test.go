@@ -22,9 +22,9 @@ import (
 
 // *nyalakan nginx dan database nya terlebih dahulu
 // go test -v ./test/integration -count=1 -p=1
-// go test -run ^TestIntegration_UpsertUser$ -v ./test/integration -count=1
+// go test -run ^TestIntegration_Upsert$ -v ./test/integration -count=1
 
-type UpsertUserTestSuite struct {
+type UpsertTestSuite struct {
 	suite.Suite
 	grpcServer     *grpcapp.Server
 	userGrpcClient pb.UserServiceClient
@@ -37,7 +37,7 @@ type UpsertUserTestSuite struct {
 	logger         *logrus.Logger
 }
 
-func (u *UpsertUserTestSuite) SetupSuite() {
+func (u *UpsertTestSuite) SetupSuite() {
 	grpcServer, postgresDb, redisDB, conf, logger := util.NewGrpcServer()
 	u.grpcServer = grpcServer
 	u.postgresDB = postgresDb
@@ -57,7 +57,7 @@ func (u *UpsertUserTestSuite) SetupSuite() {
 	u.userGrpcConn = userGrpcConn
 }
 
-func (u *UpsertUserTestSuite) TearDownSuite() {
+func (u *UpsertTestSuite) TearDownSuite() {
 	u.grpcServer.Stop()
 	u.userGrpcConn.Close()
 
@@ -68,11 +68,11 @@ func (u *UpsertUserTestSuite) TearDownSuite() {
 	sqlDB.Close()
 }
 
-func (u *UpsertUserTestSuite) TearDownTest() {
+func (u *UpsertTestSuite) TearDownTest() {
 	u.userTestUtil.Delete()
 }
 
-func (u *UpsertUserTestSuite) Test_Success() {
+func (u *UpsertTestSuite) Test_Success() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -106,7 +106,7 @@ func (u *UpsertUserTestSuite) Test_Success() {
 
 }
 
-func (u *UpsertUserTestSuite) Test_Unauthenticated() {
+func (u *UpsertTestSuite) Test_Unauthenticated() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -129,6 +129,6 @@ func (u *UpsertUserTestSuite) Test_Unauthenticated() {
 	assert.Equal(u.T(), codes.Unauthenticated, st.Code())
 }
 
-func TestIntegration_UpsertUser(t *testing.T) {
-	suite.Run(t, new(UpsertUserTestSuite))
+func TestIntegration_Upsert(t *testing.T) {
+	suite.Run(t, new(UpsertTestSuite))
 }

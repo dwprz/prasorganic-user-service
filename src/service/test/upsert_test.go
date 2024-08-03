@@ -19,16 +19,16 @@ import (
 )
 
 // go test -v ./src/service/test/... -count=1 -p=1
-// go test -run ^TestService_UpsertUser$ -v ./src/service/test -count=1
+// go test -run ^TestService_Upsert$ -v ./src/service/test -count=1
 
-type UpsertUserTestSuite struct {
+type UpsertTestSuite struct {
 	suite.Suite
 	userService svcinterface.User
 	userRepo    *repository.UserMock
 	logger      *logrus.Logger
 }
 
-func (u *UpsertUserTestSuite) SetupSuite() {
+func (u *UpsertTestSuite) SetupSuite() {
 	u.logger = logger.New()
 	validator := validator.New()
 
@@ -41,8 +41,8 @@ func (u *UpsertUserTestSuite) SetupSuite() {
 	u.userService = service.NewUser(validator, u.userRepo, userCache)
 }
 
-func (u *UpsertUserTestSuite) Test_Succsess() {
-	serviceReq := &dto.UpsertUserRequest{
+func (u *UpsertTestSuite) Test_Succsess() {
+	serviceReq := &dto.UpsertReq{
 		UserId:       "ynA1nZIULkXLrfy0fvz5t",
 		Email:        "johndoe123@gmail.com",
 		FullName:     "John Doe",
@@ -73,6 +73,6 @@ func (u *UpsertUserTestSuite) Test_Succsess() {
 	assert.Equal(u.T(), repoRes, res)
 }
 
-func TestService_UpsertUser(t *testing.T) {
-	suite.Run(t, new(UpsertUserTestSuite))
+func TestService_Upsert(t *testing.T) {
+	suite.Run(t, new(UpsertTestSuite))
 }

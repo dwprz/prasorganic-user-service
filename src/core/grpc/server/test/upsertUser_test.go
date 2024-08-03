@@ -77,7 +77,7 @@ func (u *UpsertUserTestSuite) Test_Success() {
 					   eKwNKz0Wr2wxiD4tfyzop3_D9OB-ta3F6E`,
 	}
 
-	serviceReq := new(dto.UpsertUserRequest)
+	serviceReq := new(dto.UpsertReq)
 	copier.Copy(serviceReq, serverReq)
 
 	serviceRes := &entity.User{

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	pb "github.com/dwprz/prasorganic-proto/protogen/user"
+	"github.com/dwprz/prasorganic-user-service/src/common/helper"
 	"github.com/dwprz/prasorganic-user-service/src/interface/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/jinzhu/copier"
@@ -26,7 +27,7 @@ func NewUserGrpc(l *logrus.Logger, us service.User) pb.UserServiceServer {
 }
 
 func (u *UserGrpcImpl) Create(ctx context.Context, ur *pb.RegisterRequest) (*emptypb.Empty, error) {
-	data := &dto.CreateUserRequest{}
+	data := &dto.CreateReq{}
 	if err := copier.Copy(data, ur); err != nil {
 		return nil, err
 	}
@@ -59,8 +60,29 @@ func (u *UserGrpcImpl) FindByEmail(ctx context.Context, e *pb.Email) (*pb.FindUs
 	return &pb.FindUserResponse{Data: user}, nil
 }
 
+func (u *UserGrpcImpl) FindByRefreshToken(ctx context.Context, data *pb.RefreshToken) (*pb.FindUserResponse, error) {
+	res, err := u.userService.FindByRefreshToken(ctx, data.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	if res == nil {
+		return nil, nil
+	}
+
+	user := new(pb.User)
+	if err := copier.Copy(user, res); err != nil {
+		return nil, err
+	}
+
+	user.CreatedAt = timestamppb.New(res.CreatedAt)
+	user.UpdatedAt = timestamppb.New(res.UpdatedAt)
+
+	return &pb.FindUserResponse{Data: user}, nil
+}
+
 func (u *UserGrpcImpl) Upsert(ctx context.Context, data *pb.LoginWithGoogleRequest) (*pb.User, error) {
-	req := new(dto.UpsertUserRequest)
+	req := new(dto.UpsertReq)
 	if err := copier.Copy(req, data); err != nil {
 		return nil, err
 	}
@@ -79,4 +101,17 @@ func (u *UserGrpcImpl) Upsert(ctx context.Context, data *pb.LoginWithGoogleReque
 	user.UpdatedAt = timestamppb.New(res.UpdatedAt)
 
 	return user, nil
+}
+
+func (u *UserGrpcImpl) UpdateRefreshToken(ctx context.Context, t *pb.RefreshToken) (*emptypb.Empty, error) {
+	req := &dto.UpdateRefreshToken{
+		Email:        t.Email,
+		RefreshToken: helper.ConvertToStringPointer(t.Token),
+	}
+
+	if err := u.userService.UpdateRefreshToken(ctx, req); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }

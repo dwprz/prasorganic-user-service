@@ -24,40 +24,72 @@ func NewUser(v *validator.Validate, ur repository.User, uc cache.User) service.U
 	}
 }
 
-func (s *UserImpl) Create(ctx context.Context, data *dto.CreateUserRequest) error {
-	if err := s.validate.Struct(data); err != nil {
+func (u *UserImpl) Create(ctx context.Context, data *dto.CreateReq) error {
+	if err := u.validate.Struct(data); err != nil {
 		return err
 	}
 
-	if err := s.userRepository.Create(ctx, data); err != nil {
+	if err := u.userRepository.Create(ctx, data); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *UserImpl) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
-	if userCache := s.userCache.FindByEmail(ctx, email); userCache != nil {
+func (u *UserImpl) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
+	if err := u.validate.VarCtx(ctx, email, `required,email,min=10,max=100`); err != nil {
+		return nil, err
+	}
+
+	if userCache := u.userCache.FindByEmail(ctx, email); userCache != nil {
 		return userCache, nil
 	}
 
-	result, err := s.userRepository.FindByEmail(ctx, email)
+	res, err := u.userRepository.FindByFields(ctx, &entity.User{Email: email})
 	if err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	return res, nil
 }
 
-func (s *UserImpl) Upsert(ctx context.Context, data *dto.UpsertUserRequest) (*entity.User, error) {
-	if err := s.validate.Struct(data); err != nil {
+func (u *UserImpl) FindByRefreshToken(ctx context.Context, refreshToken string) (*entity.User, error) {
+	if err := u.validate.VarCtx(ctx, refreshToken, `required,min=50,max=500`); err != nil {
 		return nil, err
 	}
 
-	user, err := s.userRepository.Upsert(ctx, data)
+	res, err := u.userRepository.FindByFields(ctx, &entity.User{
+		RefreshToken: refreshToken,
+	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	return res, nil
+}
+
+func (u *UserImpl) Upsert(ctx context.Context, data *dto.UpsertReq) (*entity.User, error) {
+	if err := u.validate.Struct(data); err != nil {
+		return nil, err
+	}
+
+	res, err := u.userRepository.Upsert(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (u *UserImpl) UpdateRefreshToken(ctx context.Context, data *dto.UpdateRefreshToken) error {
+	if err := u.validate.Struct(data); err != nil {
+		return err
+	}
+
+	if err := u.userRepository.UpdateRefreshToken(ctx, data); err != nil {
+		return err
+	}
+
+	return nil
 }

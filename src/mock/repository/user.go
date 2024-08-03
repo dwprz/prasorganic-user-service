@@ -18,14 +18,14 @@ func NewUserMock() *UserMock {
 	}
 }
 
-func (u *UserMock) Create(ctx context.Context, data *dto.CreateUserRequest) error {
+func (u *UserMock) Create(ctx context.Context, data *dto.CreateReq) error {
 	arguments := u.Mock.Called(ctx, data)
 
 	return arguments.Error(0)
 }
 
-func (u *UserMock) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
-	arguments := u.Mock.Called(ctx, email)
+func (u *UserMock) FindByFields(ctx context.Context, fields *entity.User) (*entity.User, error) {
+	arguments := u.Mock.Called(ctx, fields)
 
 	if arguments.Get(0) == nil {
 		return nil, arguments.Error(1)
@@ -34,7 +34,7 @@ func (u *UserMock) FindByEmail(ctx context.Context, email string) (*entity.User,
 	return arguments.Get(0).(*entity.User), arguments.Error(1)
 }
 
-func (u *UserMock) Upsert(ctx context.Context, data *dto.UpsertUserRequest) (*entity.User, error) {
+func (u *UserMock) Upsert(ctx context.Context, data *dto.UpsertReq) (*entity.User, error) {
 	arguments := u.Mock.Called(ctx, data)
 
 	if arguments.Get(0) == nil {
@@ -42,4 +42,10 @@ func (u *UserMock) Upsert(ctx context.Context, data *dto.UpsertUserRequest) (*en
 	}
 
 	return arguments.Get(0).(*entity.User), arguments.Error(1)
+}
+
+func (u *UserMock) UpdateRefreshToken(ctx context.Context, data *dto.UpdateRefreshToken) error {
+	arguments := u.Mock.Called(ctx, data)
+
+	return arguments.Error(0)
 }

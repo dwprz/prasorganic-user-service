@@ -7,7 +7,9 @@ import (
 )
 
 type User interface {
-	Create(ctx context.Context, data *dto.CreateUserRequest) error
+	Create(ctx context.Context, data *dto.CreateReq) error
 	FindByEmail(ctx context.Context, email string) (*entity.User, error)
-	Upsert(ctx context.Context, data *dto.UpsertUserRequest) (*entity.User, error)
+	FindByRefreshToken(ctx context.Context, refreshToken string) (*entity.User, error)
+	Upsert(ctx context.Context, data *dto.UpsertReq) (*entity.User, error)
+	UpdateRefreshToken(ctx context.Context, data *dto.UpdateRefreshToken) error
 }

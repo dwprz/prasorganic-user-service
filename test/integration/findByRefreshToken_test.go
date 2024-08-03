@@ -23,9 +23,9 @@ import (
 
 // *nyalakan nginx dan database nya terlebih dahulu
 // go test -v ./test/integration -count=1 -p=1
-// go test -run ^TestIntegration_FindUserByEmail$  -v ./test/integration -count=1
+// go test -run ^TestIntegration_FindByRefreshToken$  -v ./test/integration -count=1
 
-type FindUserByEmailTestSuite struct {
+type FindByRefreshTokenTestSuite struct {
 	suite.Suite
 	grpcServer     *grpcapp.Server
 	userGrpcClient pb.UserServiceClient
@@ -39,7 +39,7 @@ type FindUserByEmailTestSuite struct {
 	user           *entity.User
 }
 
-func (f *FindUserByEmailTestSuite) SetupSuite() {
+func (f *FindByRefreshTokenTestSuite) SetupSuite() {
 	grpcServer, postgresDB, redisDB, conf, logger := util.NewGrpcServer()
 	f.grpcServer = grpcServer
 	f.postgresDB = postgresDB
@@ -61,7 +61,7 @@ func (f *FindUserByEmailTestSuite) SetupSuite() {
 	f.user = f.userTestUtil.Create()
 }
 
-func (f *FindUserByEmailTestSuite) TearDownSuite() {
+func (f *FindByRefreshTokenTestSuite) TearDownSuite() {
 	f.redisTestUtil.Flushall()
 	f.redisDB.Close()
 
@@ -73,14 +73,16 @@ func (f *FindUserByEmailTestSuite) TearDownSuite() {
 	f.userGrpcConn.Close()
 }
 
-func (f *FindUserByEmailTestSuite) Test_Success() {
+func (f *FindByRefreshTokenTestSuite) Test_Success() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	res, err := f.userGrpcClient.FindByEmail(ctx, &pb.Email{Email: f.user.Email})
+	res, err := f.userGrpcClient.FindByRefreshToken(ctx, &pb.RefreshToken{
+		Token: f.user.RefreshToken,
+	})
 
 	assert.NoError(f.T(), err)
 	assert.NotNil(f.T(), res.Data)
@@ -89,29 +91,35 @@ func (f *FindUserByEmailTestSuite) Test_Success() {
 	assert.Equal(f.T(), codes.OK, st.Code())
 }
 
-func (f *FindUserByEmailTestSuite) Test_NotFound() {
+func (f *FindByRefreshTokenTestSuite) Test_NotFound() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	res, err := f.userGrpcClient.FindByEmail(ctx, &pb.Email{Email: "usernotfound@gmail.com"})
+	res, err := f.userGrpcClient.FindByRefreshToken(ctx, &pb.RefreshToken{
+		Token: `jadsksdmauweijdsknamsnjdsyauihsdjbnasdbjs
+				aghdhbsdbsanddssndsdhsydusyueydswauhdjasn
+				mdnsduywsduydhsjdsajhduisy2ysadaskdsadsad`,
+	})
 
 	assert.NoError(f.T(), err)
 	assert.Nil(f.T(), res.Data)
 }
 
-func (f *FindUserByEmailTestSuite) Test_Unauthenticated() {
+func (f *FindByRefreshTokenTestSuite) Test_Unauthenticated() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := f.userGrpcClient.FindByEmail(ctx, &pb.Email{Email: f.user.Email})
+	_, err := f.userGrpcClient.FindByRefreshToken(ctx, &pb.RefreshToken{
+		Token: f.user.RefreshToken,
+	})
 
 	st, _ := status.FromError(err)
 	assert.Equal(f.T(), codes.Unauthenticated, st.Code())
 }
 
-func TestIntegration_FindUserByEmail(t *testing.T) {
-	suite.Run(t, new(FindUserByEmailTestSuite))
+func TestIntegration_FindByRefreshToken(t *testing.T) {
+	suite.Run(t, new(FindByRefreshTokenTestSuite))
 }

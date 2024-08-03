@@ -23,9 +23,9 @@ import (
 )
 
 // go test -v ./src/repository/test/... -count=1 -p=1
-// go test -run ^TestRepository_CreateUser$ -v ./src/repository/test -count=1
+// go test -run ^TestRepository_Create$ -v ./src/repository/test -count=1
 
-type CreateUserTestSuite struct {
+type CreateTestSuite struct {
 	suite.Suite
 	userRepo      repointerface.User
 	postgresDB    *gorm.DB
@@ -36,7 +36,7 @@ type CreateUserTestSuite struct {
 	redisTestUtil *util.RedisTest
 }
 
-func (c *CreateUserTestSuite) SetupSuite() {
+func (c *CreateTestSuite) SetupSuite() {
 	c.logger = logger.New()
 	conf := config.New("DEVELOPMENT", c.logger)
 	c.postgresDB = database.NewPostgres(conf)
@@ -49,12 +49,12 @@ func (c *CreateUserTestSuite) SetupSuite() {
 	c.redisTestUtil = util.NewRedisTest(c.redisDB, c.logger)
 }
 
-func (c *CreateUserTestSuite) TearDownTest() {
+func (c *CreateTestSuite) TearDownTest() {
 	c.userTestUtil.Delete()
 
 }
 
-func (c *CreateUserTestSuite) TearDownSuite() {
+func (c *CreateTestSuite) TearDownSuite() {
 	sqlDB, _ := c.postgresDB.DB()
 	sqlDB.Close()
 
@@ -62,8 +62,8 @@ func (c *CreateUserTestSuite) TearDownSuite() {
 	c.redisDB.Close()
 }
 
-func (c *CreateUserTestSuite) Test_Success() {
-	user := &dto.CreateUserRequest{
+func (c *CreateTestSuite) Test_Success() {
+	user := &dto.CreateReq{
 		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
@@ -74,8 +74,8 @@ func (c *CreateUserTestSuite) Test_Success() {
 	assert.NoError(c.T(), err)
 }
 
-func (c *CreateUserTestSuite) Test_AlreadyExists() {
-	user := &dto.CreateUserRequest{
+func (c *CreateTestSuite) Test_AlreadyExists() {
+	user := &dto.CreateReq{
 		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
@@ -91,6 +91,6 @@ func (c *CreateUserTestSuite) Test_AlreadyExists() {
 	assert.Equal(c.T(), errorRes, err)
 }
 
-func TestRepository_CreateUser(t *testing.T) {
-	suite.Run(t, new(CreateUserTestSuite))
+func TestRepository_Create(t *testing.T) {
+	suite.Run(t, new(CreateTestSuite))
 }

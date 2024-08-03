@@ -2,15 +2,13 @@ package test
 
 import (
 	"context"
-	"testing"
-	"time"
-	"github.com/dwprz/prasorganic-proto/protogen/user"
-	"github.com/dwprz/prasorganic-user-service/src/mock/service"
+	pb "github.com/dwprz/prasorganic-proto/protogen/user"
 	"github.com/dwprz/prasorganic-user-service/src/common/logger"
 	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/interceptor"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	"github.com/dwprz/prasorganic-user-service/src/mock/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/dwprz/prasorganic-user-service/test/util"
 	"github.com/sirupsen/logrus"
@@ -18,6 +16,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"testing"
+	"time"
 )
 
 // go test -v ./src/core/grpc/server/test/... -count=1 -p=1
@@ -26,7 +26,7 @@ import (
 type FindUserByEmailTestSuite struct {
 	suite.Suite
 	grpcServer     *grpcapp.Server
-	userGrpcClient user.UserServiceClient
+	userGrpcClient pb.UserServiceClient
 	userGrpcConn   *grpc.ClientConn
 	userService    *service.UserMock
 	logger         *logrus.Logger
@@ -50,7 +50,7 @@ func (f *FindUserByEmailTestSuite) SetupSuite() {
 
 	grpcAddress := "localhost:" + conf.CurrentApp.GrpcPort
 	userGrpcClient, userGrpcConn := util.NewGrpcUserClient(grpcAddress)
-	
+
 	f.userGrpcClient = userGrpcClient
 	f.userGrpcConn = userGrpcConn
 }
@@ -61,7 +61,7 @@ func (f *FindUserByEmailTestSuite) TearDownSuite() {
 }
 
 func (f *FindUserByEmailTestSuite) Test_Success() {
-	request := &user.Email{Email: "johndoe@gmail.com"}
+	request := &pb.Email{Email: "johndoe@gmail.com"}
 
 	user := &entity.User{
 		UserId:   "ynA1nZIULkXLrfy0fvz5t",
@@ -70,17 +70,17 @@ func (f *FindUserByEmailTestSuite) Test_Success() {
 	}
 
 	f.userService.Mock.On("FindByEmail", mock.Anything, request.Email).Return(user, nil)
-	
+
 	res, err := f.userGrpcClient.FindByEmail(context.Background(), request)
 	assert.NoError(f.T(), err)
 	assert.NotNil(f.T(), res.Data)
 }
 
 func (f *FindUserByEmailTestSuite) Test_NotFound() {
-	request := &user.Email{Email: "notfounduser@gmail.com"}
+	request := &pb.Email{Email: "notfounduser@gmail.com"}
 
 	f.userService.Mock.On("FindByEmail", mock.Anything, request.Email).Return(nil, nil)
-	
+
 	res, err := f.userGrpcClient.FindByEmail(context.Background(), request)
 	assert.NoError(f.T(), err)
 	assert.Nil(f.T(), res.Data)

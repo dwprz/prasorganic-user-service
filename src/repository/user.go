@@ -2,10 +2,9 @@ package repository
 
 import (
 	"context"
-
+	"github.com/dwprz/prasorganic-user-service/src/common/errors"
 	"github.com/dwprz/prasorganic-user-service/src/interface/cache"
 	"github.com/dwprz/prasorganic-user-service/src/interface/repository"
-	"github.com/dwprz/prasorganic-user-service/src/common/errors"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -25,7 +24,7 @@ func NewUser(db *gorm.DB, uc cache.User) repository.User {
 	}
 }
 
-func (u *UserImpl) Create(ctx context.Context, data *dto.CreateUserRequest) error {
+func (u *UserImpl) Create(ctx context.Context, data *dto.CreateReq) error {
 	query := "INSERT INTO users (user_id, email, full_name, password) VALUES($1, $2, $3, $4) RETURNING *;"
 
 	user := new(entity.User)
@@ -46,11 +45,10 @@ func (u *UserImpl) Create(ctx context.Context, data *dto.CreateUserRequest) erro
 	return nil
 }
 
-func (u *UserImpl) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
-	user := &entity.User{}
+func (u *UserImpl) FindByFields(ctx context.Context, fields *entity.User) (*entity.User, error) {
+	user := new(entity.User)
 
-	res := u.db.WithContext(ctx).Raw("SELECT * FROM users WHERE email = $1;", email).Scan(user)
-
+	res := u.db.WithContext(ctx).Where(fields).Find(user)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -63,7 +61,7 @@ func (u *UserImpl) FindByEmail(ctx context.Context, email string) (*entity.User,
 	return user, nil
 }
 
-func (u *UserImpl) Upsert(ctx context.Context, data *dto.UpsertUserRequest) (*entity.User, error) {
+func (u *UserImpl) Upsert(ctx context.Context, data *dto.UpsertReq) (*entity.User, error) {
 	user := &entity.User{}
 
 	query := `
@@ -90,4 +88,21 @@ func (u *UserImpl) Upsert(ctx context.Context, data *dto.UpsertUserRequest) (*en
 
 	u.userCache.Cache(ctx, user)
 	return user, nil
+}
+
+func (u *UserImpl) UpdateRefreshToken(ctx context.Context, data *dto.UpdateRefreshToken) error {
+	user := new(entity.User)
+
+	query := `UPDATE users SET refresh_token = $1, updated_at = now() WHERE email = $2 RETURNING *;`
+
+	res := u.db.WithContext(ctx).Raw(query, data.RefreshToken, data.Email).Scan(user)
+	if res.Error != nil {
+		return res.Error
+	}
+
+	if res.RowsAffected > 0 {
+		u.userCache.Cache(ctx, user)
+	}
+
+	return nil
 }

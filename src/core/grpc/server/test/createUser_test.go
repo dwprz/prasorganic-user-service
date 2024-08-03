@@ -2,16 +2,14 @@ package test
 
 import (
 	"context"
-	"testing"
-	"time"
-	"github.com/dwprz/prasorganic-proto/protogen/user"
-	"github.com/dwprz/prasorganic-user-service/src/mock/service"
+	pb "github.com/dwprz/prasorganic-proto/protogen/user"
 	"github.com/dwprz/prasorganic-user-service/src/common/errors"
 	"github.com/dwprz/prasorganic-user-service/src/common/logger"
 	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/interceptor"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	"github.com/dwprz/prasorganic-user-service/src/mock/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/dwprz/prasorganic-user-service/test/util"
 	"github.com/jinzhu/copier"
@@ -21,6 +19,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"testing"
+	"time"
 )
 
 // go test -v ./src/core/grpc/server/test/... -count=1 -p=1
@@ -29,7 +29,7 @@ import (
 type CreateUserTestSuite struct {
 	suite.Suite
 	grpcServer     *grpcapp.Server
-	userGrpcClient user.UserServiceClient
+	userGrpcClient pb.UserServiceClient
 	userGrpcConn   *grpc.ClientConn
 	userService    *service.UserMock
 	logger         *logrus.Logger
@@ -64,7 +64,7 @@ func (c *CreateUserTestSuite) TearDownSuite() {
 }
 
 func (c *CreateUserTestSuite) Test_Success() {
-	userCreate := &dto.CreateUserRequest{
+	userCreate := &dto.CreateReq{
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
 		Password: "rahasia",
@@ -72,7 +72,7 @@ func (c *CreateUserTestSuite) Test_Success() {
 
 	c.userService.Mock.On("Create", mock.Anything, userCreate).Return(nil)
 
-	registerReq := new(user.RegisterRequest)
+	registerReq := new(pb.RegisterRequest)
 	err := copier.Copy(registerReq, userCreate)
 	assert.NoError(c.T(), err)
 
@@ -81,7 +81,7 @@ func (c *CreateUserTestSuite) Test_Success() {
 }
 
 func (c *CreateUserTestSuite) Test_AlreadyExists() {
-	userCreate := &dto.CreateUserRequest{
+	userCreate := &dto.CreateReq{
 		Email:    "existeduser@gmail.com",
 		FullName: "John Doe",
 		Password: "rahasia",
@@ -90,7 +90,7 @@ func (c *CreateUserTestSuite) Test_AlreadyExists() {
 	errorRes := &errors.Response{HttpCode: 409, GrpcCode: codes.AlreadyExists}
 	c.userService.Mock.On("Create", mock.Anything, userCreate).Return(errorRes)
 
-	registerReq := new(user.RegisterRequest)
+	registerReq := new(pb.RegisterRequest)
 	err := copier.Copy(registerReq, userCreate)
 	assert.NoError(c.T(), err)
 

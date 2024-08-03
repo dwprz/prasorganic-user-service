@@ -3,7 +3,7 @@ module github.com/dwprz/prasorganic-user-service
 go 1.21.3
 
 require (
-	github.com/dwprz/prasorganic-proto v0.0.12
+	github.com/dwprz/prasorganic-proto v0.0.15
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/hashicorp/vault/api v1.14.0
 	github.com/jackc/pgx/v5 v5.5.5

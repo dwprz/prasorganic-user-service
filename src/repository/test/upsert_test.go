@@ -20,9 +20,9 @@ import (
 )
 
 // go test -v ./src/repository/test/... -count=1 -p=1
-// go test -run ^TestRepository_UpsertUser$ -v ./src/repository/test -count=1
+// go test -run ^TestRepository_Upsert$ -v ./src/repository/test -count=1
 
-type UpsertUserTestSuite struct {
+type UpsertTestSuite struct {
 	suite.Suite
 	userRepo      repointerface.User
 	postgresDB    *gorm.DB
@@ -33,7 +33,7 @@ type UpsertUserTestSuite struct {
 	redisTestUtil *util.RedisTest
 }
 
-func (u *UpsertUserTestSuite) SetupSuite() {
+func (u *UpsertTestSuite) SetupSuite() {
 	u.logger = logger.New()
 	conf := config.New("DEVELOPMENT", u.logger)
 	u.postgresDB = database.NewPostgres(conf)
@@ -46,7 +46,7 @@ func (u *UpsertUserTestSuite) SetupSuite() {
 	u.redisTestUtil = util.NewRedisTest(u.redisDB, u.logger)
 }
 
-func (u *UpsertUserTestSuite) TearDownSuite() {
+func (u *UpsertTestSuite) TearDownSuite() {
 	u.userTestUtil.Delete()
 	sqlDB, _ := u.postgresDB.DB()
 	sqlDB.Close()
@@ -55,8 +55,8 @@ func (u *UpsertUserTestSuite) TearDownSuite() {
 	u.redisDB.Close()
 }
 
-func (u *UpsertUserTestSuite) Test_Success() {
-	req := &dto.UpsertUserRequest{
+func (u *UpsertTestSuite) Test_Success() {
+	req := &dto.UpsertReq{
 		UserId:       "ynA1nZIULkXLrfy0fvz5t",
 		Email:        "johndoe123@gmail.com",
 		FullName:     "John Doe",
@@ -82,6 +82,6 @@ func (u *UpsertUserTestSuite) Test_Success() {
 	assert.Equal(u.T(), req.RefreshToken, res.RefreshToken)
 }
 
-func TestRepository_UpsertUser(t *testing.T) {
-	suite.Run(t, new(UpsertUserTestSuite))
+func TestRepository_Upsert(t *testing.T) {
+	suite.Run(t, new(UpsertTestSuite))
 }

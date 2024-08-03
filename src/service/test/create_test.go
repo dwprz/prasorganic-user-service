@@ -17,15 +17,15 @@ import (
 )
 
 // go test -v ./src/service/test/... -count=1 -p=1
-// go test -run ^TestService_CreateUser$ -v ./src/service/test -count=1
+// go test -run ^TestService_Create$ -v ./src/service/test -count=1
 
-type CreateUserTestSuite struct {
+type CreateTestSuite struct {
 	suite.Suite
 	userService svcinterface.User
 	userRepo    *repository.UserMock
 }
 
-func (c *CreateUserTestSuite) SetupSuite() {
+func (c *CreateTestSuite) SetupSuite() {
 	validator := validator.New()
 
 	// mock
@@ -36,8 +36,8 @@ func (c *CreateUserTestSuite) SetupSuite() {
 	c.userService = service.NewUser(validator, c.userRepo, userCache)
 }
 
-func (c *CreateUserTestSuite) Test_Succsess() {
-	req := &dto.CreateUserRequest{
+func (c *CreateTestSuite) Test_Succsess() {
+	req := &dto.CreateReq{
 		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
@@ -50,8 +50,8 @@ func (c *CreateUserTestSuite) Test_Succsess() {
 	assert.NoError(c.T(), err)
 }
 
-func (c *CreateUserTestSuite) Test_InvalidEmail() {
-	req := &dto.CreateUserRequest{
+func (c *CreateTestSuite) Test_InvalidEmail() {
+	req := &dto.CreateReq{
 		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "123456",
 		FullName: "John Doe",
@@ -66,8 +66,8 @@ func (c *CreateUserTestSuite) Test_InvalidEmail() {
 	assert.Equal(c.T(), "Email", errVldtn[0].Field())
 }
 
-func (c *CreateUserTestSuite) Test_AlreadyExists() {
-	req := &dto.CreateUserRequest{
+func (c *CreateTestSuite) Test_AlreadyExists() {
+	req := &dto.CreateReq{
 		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "existeduser@gmail.com",
 		FullName: "John Doe",
@@ -82,6 +82,6 @@ func (c *CreateUserTestSuite) Test_AlreadyExists() {
 	assert.Equal(c.T(), errorRes, err)
 }
 
-func TestService_CreateUser(t *testing.T) {
-	suite.Run(t, new(CreateUserTestSuite))
+func TestService_Create(t *testing.T) {
+	suite.Run(t, new(CreateTestSuite))
 }

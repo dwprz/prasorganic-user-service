@@ -2,12 +2,12 @@ package test
 
 import (
 	"context"
-	chaceinterface "github.com/dwprz/prasorganic-user-service/src/interface/cache"
-	repointerface "github.com/dwprz/prasorganic-user-service/src/interface/repository"
 	"github.com/dwprz/prasorganic-user-service/src/cache"
 	"github.com/dwprz/prasorganic-user-service/src/common/logger"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/database"
+	chaceinterface "github.com/dwprz/prasorganic-user-service/src/interface/cache"
+	repointerface "github.com/dwprz/prasorganic-user-service/src/interface/repository"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/dwprz/prasorganic-user-service/src/repository"
 	"github.com/dwprz/prasorganic-user-service/test/util"
@@ -20,9 +20,9 @@ import (
 )
 
 // go test -v ./src/repository/test/... -count=1 -p=1
-// go test -run ^TestRepository_FindUserByEmail$ -v ./src/repository/test -count=1
+// go test -run ^TestRepository_FindByField$ -v ./src/repository/test -count=1
 
-type FindUserByEmailTestSuite struct {
+type FindByFieldTestSuite struct {
 	suite.Suite
 	user          *entity.User
 	userRepo      repointerface.User
@@ -34,7 +34,7 @@ type FindUserByEmailTestSuite struct {
 	redisTestUtil *util.RedisTest
 }
 
-func (f *FindUserByEmailTestSuite) SetupSuite() {
+func (f *FindByFieldTestSuite) SetupSuite() {
 	f.logger = logger.New()
 	conf := config.New("DEVELOPMENT", f.logger)
 	f.postgresDB = database.NewPostgres(conf)
@@ -49,7 +49,7 @@ func (f *FindUserByEmailTestSuite) SetupSuite() {
 	f.user = f.userTestUtil.Create()
 }
 
-func (f *FindUserByEmailTestSuite) TearDownSuite() {
+func (f *FindByFieldTestSuite) TearDownSuite() {
 	f.userTestUtil.Delete()
 	sqlDB, _ := f.postgresDB.DB()
 	sqlDB.Close()
@@ -58,18 +58,18 @@ func (f *FindUserByEmailTestSuite) TearDownSuite() {
 	f.redisDB.Close()
 }
 
-func (f *FindUserByEmailTestSuite) Test_Success() {
-	user, err := f.userRepo.FindByEmail(context.Background(), f.user.Email)
+func (f *FindByFieldTestSuite) Test_Success() {
+	res, err := f.userRepo.FindByFields(context.Background(), &entity.User{Email: f.user.Email})
 	assert.NoError(f.T(), err)
-	assert.Equal(f.T(), f.user, user)
+	assert.Equal(f.T(), f.user, res)
 }
 
-func (f *FindUserByEmailTestSuite) Test_NotFound() {
-	user, err := f.userRepo.FindByEmail(context.Background(), "notfounduser@gmail.com")
+func (f *FindByFieldTestSuite) Test_NotFound() {
+	user, err := f.userRepo.FindByFields(context.Background(), &entity.User{Email: "notfounduser@gmail.com"})
 	assert.NoError(f.T(), err)
 	assert.Nil(f.T(), user)
 }
 
-func TestRepository_FindUserByEmail(t *testing.T) {
-	suite.Run(t, new(FindUserByEmailTestSuite))
+func TestRepository_FindByField(t *testing.T) {
+	suite.Run(t, new(FindByFieldTestSuite))
 }

@@ -110,6 +110,12 @@ github.com/dwprz/prasorganic-proto v0.0.11 h1:EidhNMIkTojjvdFX1lzi0R43xLEftPrfjj
 github.com/dwprz/prasorganic-proto v0.0.11/go.mod h1:Rr6U1U11kYTaYCqQd7Kz2X87jtWvHRNbOYROF/Y1NAU=
 github.com/dwprz/prasorganic-proto v0.0.12 h1:0TqQxBQA/hBNHQBVIQByK65Q1+RlshiSsZ/7vEUv5sA=
 github.com/dwprz/prasorganic-proto v0.0.12/go.mod h1:Rr6U1U11kYTaYCqQd7Kz2X87jtWvHRNbOYROF/Y1NAU=
+github.com/dwprz/prasorganic-proto v0.0.13 h1:GO0wCtqvwKjvvR2zTwPj/6Uwk7UWkg3V2PoR4VUN3Lw=
+github.com/dwprz/prasorganic-proto v0.0.13/go.mod h1:Rr6U1U11kYTaYCqQd7Kz2X87jtWvHRNbOYROF/Y1NAU=
+github.com/dwprz/prasorganic-proto v0.0.14 h1:k4mpTIRLOQBpWCOVyNGWvpE3RB0WlRPU8SgvcVKf+/0=
+github.com/dwprz/prasorganic-proto v0.0.14/go.mod h1:Rr6U1U11kYTaYCqQd7Kz2X87jtWvHRNbOYROF/Y1NAU=
+github.com/dwprz/prasorganic-proto v0.0.15 h1:PzvF6OnOS0c0b9JbPzv9oZig6fskkAf8sFgKuVzIQQ4=
+github.com/dwprz/prasorganic-proto v0.0.15/go.mod h1:Rr6U1U11kYTaYCqQd7Kz2X87jtWvHRNbOYROF/Y1NAU=
 github.com/emirpasic/gods v1.12.0 h1:QAUIPSaCu4G+POclxeqb3F+WPpdKqFGlw36+yOzGlrg=
 github.com/emirpasic/gods v1.12.0/go.mod h1:YfzfFFoVP/catgzJb4IKIqXjX78Ha8FMSDh3ymbK86o=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
