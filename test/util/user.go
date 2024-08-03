@@ -25,7 +25,7 @@ func (u *UserTest) Create() *entity.User {
 
 	if err := u.db.Raw(query).Scan(user).Error; err != nil {
 		u.logger.WithFields(logrus.Fields{
-			"location": "usertest.UserTest/Create",
+			"location": "util.UserTest/Create",
 			"section":  "gorm.DB.Raw",
 		}).Errorf(err.Error())
 	}
@@ -36,7 +36,7 @@ func (u *UserTest) Create() *entity.User {
 func (u *UserTest) Delete() {
 	if err := u.db.Exec("DELETE FROM users;").Error; err != nil {
 		u.logger.WithFields(logrus.Fields{
-			"location": "usertest.UserTest/Delete",
+			"location": "util.UserTest/Delete",
 			"section":  "orm.DB.Exec",
 		}).Errorf(err.Error())
 	}

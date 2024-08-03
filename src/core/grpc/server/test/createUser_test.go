@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 	"github.com/dwprz/prasorganic-proto/protogen/user"
-	"github.com/dwprz/prasorganic-user-service/mock/service"
+	"github.com/dwprz/prasorganic-user-service/src/mock/service"
 	"github.com/dwprz/prasorganic-user-service/src/common/errors"
 	"github.com/dwprz/prasorganic-user-service/src/common/logger"
 	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
@@ -64,7 +64,7 @@ func (c *CreateUserTestSuite) TearDownSuite() {
 }
 
 func (c *CreateUserTestSuite) Test_Success() {
-	userCreate := &dto.UserCreate{
+	userCreate := &dto.CreateUserRequest{
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
 		Password: "rahasia",
@@ -81,7 +81,7 @@ func (c *CreateUserTestSuite) Test_Success() {
 }
 
 func (c *CreateUserTestSuite) Test_AlreadyExists() {
-	userCreate := &dto.UserCreate{
+	userCreate := &dto.CreateUserRequest{
 		Email:    "existeduser@gmail.com",
 		FullName: "John Doe",
 		Password: "rahasia",

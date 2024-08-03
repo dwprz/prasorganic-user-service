@@ -2,13 +2,12 @@ package service
 
 import (
 	"context"
-	"github.com/dwprz/prasorganic-user-service/interface/cache"
-	"github.com/dwprz/prasorganic-user-service/interface/repository"
-	"github.com/dwprz/prasorganic-user-service/interface/service"
+	"github.com/dwprz/prasorganic-user-service/src/interface/cache"
+	"github.com/dwprz/prasorganic-user-service/src/interface/repository"
+	"github.com/dwprz/prasorganic-user-service/src/interface/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/go-playground/validator/v10"
-	"github.com/jinzhu/copier"
 )
 
 type UserImpl struct {
@@ -25,6 +24,18 @@ func NewUser(v *validator.Validate, ur repository.User, uc cache.User) service.U
 	}
 }
 
+func (s *UserImpl) Create(ctx context.Context, data *dto.CreateUserRequest) error {
+	if err := s.validate.Struct(data); err != nil {
+		return err
+	}
+
+	if err := s.userRepository.Create(ctx, data); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *UserImpl) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
 	if userCache := s.userCache.FindByEmail(ctx, email); userCache != nil {
 		return userCache, nil
@@ -38,19 +49,15 @@ func (s *UserImpl) FindByEmail(ctx context.Context, email string) (*entity.User,
 	return result, nil
 }
 
-func (s *UserImpl) Create(ctx context.Context, data *dto.UserCreate) error {
+func (s *UserImpl) Upsert(ctx context.Context, data *dto.UpsertUserRequest) (*entity.User, error) {
 	if err := s.validate.Struct(data); err != nil {
-		return err
+		return nil, err
 	}
 
-	userEntity := new(entity.User)
-	if err := copier.Copy(userEntity, data); err != nil {
-		return err
+	user, err := s.userRepository.Upsert(ctx, data)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := s.userRepository.Create(ctx, userEntity); err != nil {
-		return err
-	}
-
-	return nil
+	return user, nil
 }

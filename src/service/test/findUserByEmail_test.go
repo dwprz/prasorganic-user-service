@@ -2,16 +2,16 @@ package test
 
 import (
 	"context"
-	"testing"
-	svcinterface "github.com/dwprz/prasorganic-user-service/interface/service"
-	"github.com/dwprz/prasorganic-user-service/mock/cache"
-	"github.com/dwprz/prasorganic-user-service/mock/repository"
+	svcinterface "github.com/dwprz/prasorganic-user-service/src/interface/service"
+	"github.com/dwprz/prasorganic-user-service/src/mock/cache"
+	"github.com/dwprz/prasorganic-user-service/src/mock/repository"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/dwprz/prasorganic-user-service/src/service"
 	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"testing"
 )
 
 // go test -v ./src/service/test/... -count=1 -p=1
@@ -29,7 +29,6 @@ func (f *FindUserByEmailTestSuite) SetupSuite() {
 
 	// mock
 	f.userRepo = repository.NewUserMock()
-
 	// mock
 	f.userCache = cache.NewUserMock()
 
@@ -37,22 +36,22 @@ func (f *FindUserByEmailTestSuite) SetupSuite() {
 }
 
 func (f *FindUserByEmailTestSuite) Test_Succsess() {
-	user := &entity.User{
-		UserID:   1,
+	req := &entity.User{
+		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
 	}
 
-	f.userCache.Mock.On("FindByEmail", mock.Anything, user.Email).Return(user)
-	f.userRepo.Mock.On("FindByEmail", mock.Anything, user.Email).Return(user, nil)
+	f.userCache.Mock.On("FindByEmail", mock.Anything, req.Email).Return(req)
+	f.userRepo.Mock.On("FindByEmail", mock.Anything, req.Email).Return(req, nil)
 
-	res, err := f.userService.FindByEmail(context.Background(), user.Email)
+	res, err := f.userService.FindByEmail(context.Background(), req.Email)
 	assert.NoError(f.T(), err)
-	assert.Equal(f.T(), user, res)
+	assert.Equal(f.T(), req, res)
 }
 
 func (f *FindUserByEmailTestSuite) Test_NotFound() {
-	email:= "notfounduser@gmail.com"
+	email := "notfounduser@gmail.com"
 
 	f.userCache.Mock.On("FindByEmail", mock.Anything, email).Return(nil)
 	f.userRepo.Mock.On("FindByEmail", mock.Anything, email).Return(nil, nil)

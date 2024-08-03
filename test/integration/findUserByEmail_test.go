@@ -3,9 +3,7 @@ package integration_test
 import (
 	"context"
 	"encoding/base64"
-	"testing"
-	"time"
-	userpb "github.com/dwprz/prasorganic-proto/protogen/user"
+	pb "github.com/dwprz/prasorganic-proto/protogen/user"
 	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
@@ -19,19 +17,23 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
+	"testing"
+	"time"
 )
 
-// go test -v ./tests/integration -count=1
+// *nyalakan nginx dan database nya terlebih dahulu
+// go test -v ./test/integration -count=1 -p=1
 // go test -run ^TestIntegration_FindUserByEmail$  -v ./test/integration -count=1
 
 type FindUserByEmailTestSuite struct {
 	suite.Suite
 	grpcServer     *grpcapp.Server
-	userGrpcClient userpb.UserServiceClient
+	userGrpcClient pb.UserServiceClient
 	userGrpcConn   *grpc.ClientConn
 	userTestUtil   *util.UserTest
 	postgresDB     *gorm.DB
 	redisDB        *redis.ClusterClient
+	redisTestUtil  *util.RedisTest
 	conf           *config.Config
 	logger         *logrus.Logger
 	user           *entity.User
@@ -46,6 +48,7 @@ func (f *FindUserByEmailTestSuite) SetupSuite() {
 	f.logger = logger
 
 	f.userTestUtil = util.NewUserTest(postgresDB, logger)
+	f.redisTestUtil = util.NewRedisTest(f.redisDB, f.logger)
 
 	go f.grpcServer.Run()
 
@@ -59,14 +62,15 @@ func (f *FindUserByEmailTestSuite) SetupSuite() {
 }
 
 func (f *FindUserByEmailTestSuite) TearDownSuite() {
+	f.redisTestUtil.Flushall()
+	f.redisDB.Close()
+
 	f.userTestUtil.Delete()
+	sqlDB, _ := f.postgresDB.DB()
+	sqlDB.Close()
 
 	f.grpcServer.Stop()
 	f.userGrpcConn.Close()
-
-	f.redisDB.Close()
-	sqlDB, _ := f.postgresDB.DB()
-	sqlDB.Close()
 }
 
 func (f *FindUserByEmailTestSuite) Test_Success() {
@@ -76,7 +80,7 @@ func (f *FindUserByEmailTestSuite) Test_Success() {
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	res, err := f.userGrpcClient.FindByEmail(ctx, &userpb.Email{Email: f.user.Email})
+	res, err := f.userGrpcClient.FindByEmail(ctx, &pb.Email{Email: f.user.Email})
 
 	assert.NoError(f.T(), err)
 	assert.NotNil(f.T(), res.Data)
@@ -92,7 +96,7 @@ func (f *FindUserByEmailTestSuite) Test_NotFound() {
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	res, err := f.userGrpcClient.FindByEmail(ctx, &userpb.Email{Email: "usernotfound@gmail.com"})
+	res, err := f.userGrpcClient.FindByEmail(ctx, &pb.Email{Email: "usernotfound@gmail.com"})
 
 	assert.NoError(f.T(), err)
 	assert.Nil(f.T(), res.Data)
@@ -102,7 +106,7 @@ func (f *FindUserByEmailTestSuite) Test_Unauthenticated() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := f.userGrpcClient.FindByEmail(ctx, &userpb.Email{Email: f.user.Email})
+	_, err := f.userGrpcClient.FindByEmail(ctx, &pb.Email{Email: f.user.Email})
 
 	st, _ := status.FromError(err)
 	assert.Equal(f.T(), codes.Unauthenticated, st.Code())

@@ -2,7 +2,6 @@ package util
 
 import (
 	"log"
-
 	userpb "github.com/dwprz/prasorganic-proto/protogen/user"
 	"github.com/dwprz/prasorganic-user-service/src/cache"
 	"github.com/dwprz/prasorganic-user-service/src/common/logger"

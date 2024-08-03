@@ -18,7 +18,7 @@ func NewUserMock() *UserMock {
 	}
 }
 
-func (u *UserMock) Create(ctx context.Context, data *dto.UserCreate) error {
+func (u *UserMock) Create(ctx context.Context, data *dto.CreateUserRequest) error {
 	arguments := u.Mock.Called(ctx, data)
 
 	return arguments.Error(0)
@@ -26,6 +26,16 @@ func (u *UserMock) Create(ctx context.Context, data *dto.UserCreate) error {
 
 func (u *UserMock) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
 	arguments := u.Mock.Called(ctx, email)
+
+	if arguments.Get(0) == nil {
+		return nil, arguments.Error(1)
+	}
+
+	return arguments.Get(0).(*entity.User), arguments.Error(1)
+}
+
+func (u *UserMock) Upsert(ctx context.Context, data *dto.UpsertUserRequest) (*entity.User, error) {
+	arguments := u.Mock.Called(ctx, data)
 
 	if arguments.Get(0) == nil {
 		return nil, arguments.Error(1)

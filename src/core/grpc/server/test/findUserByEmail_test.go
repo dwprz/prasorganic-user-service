@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 	"github.com/dwprz/prasorganic-proto/protogen/user"
-	"github.com/dwprz/prasorganic-user-service/mock/service"
+	"github.com/dwprz/prasorganic-user-service/src/mock/service"
 	"github.com/dwprz/prasorganic-user-service/src/common/logger"
 	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/interceptor"
@@ -64,7 +64,7 @@ func (f *FindUserByEmailTestSuite) Test_Success() {
 	request := &user.Email{Email: "johndoe@gmail.com"}
 
 	user := &entity.User{
-		UserID:   1,
+		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
 	}

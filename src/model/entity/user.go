@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type User struct {
-	UserID       uint      `json:"user_id" gorm:"column:user_id;primaryKey"`
+	UserId       string    `json:"user_id" gorm:"column:user_id;primaryKey"`
 	Email        string    `json:"email" gorm:"column:email"`
 	FullName     string    `json:"full_name" gorm:"column:full_name"`
 	Role         string    `json:"role" gorm:"column:role;default:'USER'"`
@@ -13,4 +13,8 @@ type User struct {
 	RefreshToken string    `json:"refresh_token" gorm:"column:refresh_token;default:null"`
 	CreatedAt    time.Time `json:"created_at" gorm:"column:created_at;autoCreateTime"`
 	UpdatedAt    time.Time `json:"updated_at" grom:"column:updated_at;autoUpdateTime"`
+}
+
+func (u *User) TableName() string {
+	return "users"
 }

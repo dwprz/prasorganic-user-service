@@ -4,15 +4,17 @@ import (
 	"context"
 	"testing"
 
-	repointerface "github.com/dwprz/prasorganic-user-service/interface/repository"
-	"github.com/dwprz/prasorganic-user-service/mock/cache"
+	chaceinterface "github.com/dwprz/prasorganic-user-service/src/interface/cache"
+	repointerface "github.com/dwprz/prasorganic-user-service/src/interface/repository"
+	"github.com/dwprz/prasorganic-user-service/src/cache"
 	"github.com/dwprz/prasorganic-user-service/src/common/errors"
 	"github.com/dwprz/prasorganic-user-service/src/common/logger"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/database"
-	"github.com/dwprz/prasorganic-user-service/src/model/entity"
+	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/dwprz/prasorganic-user-service/src/repository"
 	"github.com/dwprz/prasorganic-user-service/test/util"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -25,23 +27,26 @@ import (
 
 type CreateUserTestSuite struct {
 	suite.Suite
-	userRepo     repointerface.User
-	postgresDB   *gorm.DB
-	userCache    *cache.UserMock
-	logger       *logrus.Logger
-	userTestUtil *util.UserTest
+	userRepo      repointerface.User
+	postgresDB    *gorm.DB
+	userCache     chaceinterface.User
+	redisDB       *redis.ClusterClient
+	logger        *logrus.Logger
+	userTestUtil  *util.UserTest
+	redisTestUtil *util.RedisTest
 }
 
 func (c *CreateUserTestSuite) SetupSuite() {
 	c.logger = logger.New()
 	conf := config.New("DEVELOPMENT", c.logger)
 	c.postgresDB = database.NewPostgres(conf)
+	c.redisDB = database.NewRedisCluster(conf)
 
-	// mock
-	c.userCache = cache.NewUserMock()
+	c.userCache = cache.NewUser(c.redisDB, c.logger)
 
 	c.userRepo = repository.NewUser(c.postgresDB, c.userCache)
 	c.userTestUtil = util.NewUserTest(c.postgresDB, c.logger)
+	c.redisTestUtil = util.NewRedisTest(c.redisDB, c.logger)
 }
 
 func (c *CreateUserTestSuite) TearDownTest() {
@@ -52,10 +57,14 @@ func (c *CreateUserTestSuite) TearDownTest() {
 func (c *CreateUserTestSuite) TearDownSuite() {
 	sqlDB, _ := c.postgresDB.DB()
 	sqlDB.Close()
+
+	c.redisTestUtil.Flushall()
+	c.redisDB.Close()
 }
 
 func (c *CreateUserTestSuite) Test_Success() {
-	user := &entity.User{
+	user := &dto.CreateUserRequest{
+		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
 		Password: "rahasia",
@@ -66,7 +75,8 @@ func (c *CreateUserTestSuite) Test_Success() {
 }
 
 func (c *CreateUserTestSuite) Test_AlreadyExists() {
-	user := &entity.User{
+	user := &dto.CreateUserRequest{
+		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
 		Password: "rahasia",

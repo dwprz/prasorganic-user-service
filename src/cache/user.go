@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-	"github.com/dwprz/prasorganic-user-service/interface/cache"
+
+	"github.com/dwprz/prasorganic-user-service/src/interface/cache"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"

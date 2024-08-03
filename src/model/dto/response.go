@@ -2,14 +2,8 @@ package dto
 
 import "time"
 
-type UserCreate struct {
-	Email    string `json:"email" validate:"required,email,min=5,max=100"`
-	FullName string `json:"full_name" validate:"required,min=3,max=100"`
-	Password string `json:"password" validate:"required,min=5,max=100"`
-}
-
 type UserWithCredentials struct {
-	UserID       uint      `json:"user_id"`
+	UserId       string    `json:"user_id"`
 	Email        string    `json:"email"`
 	FullName     string    `json:"full_name"`
 	Role         string    `json:"role"`
@@ -22,7 +16,7 @@ type UserWithCredentials struct {
 }
 
 type UserSanitized struct {
-	UserID       uint      `json:"user_id"`
+	UserId       string    `json:"user_id"`
 	Email        string    `json:"email"`
 	FullName     string    `json:"full_name"`
 	Role         string    `json:"role"`

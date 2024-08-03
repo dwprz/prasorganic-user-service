@@ -3,10 +3,7 @@ package integration_test
 import (
 	"context"
 	"encoding/base64"
-	"testing"
-	"time"
-
-	userpb "github.com/dwprz/prasorganic-proto/protogen/user"
+	pb "github.com/dwprz/prasorganic-proto/protogen/user"
 	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	"github.com/dwprz/prasorganic-user-service/test/util"
@@ -19,18 +16,23 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
+	"testing"
+	"time"
 )
 
+// *nyalakan nginx dan database nya terlebih dahulu
+// go test -v ./test/integration -count=1 -p=1
 // go test -run ^TestIntegration_CreateUser$ -v ./test/integration -count=1
 
 type CreateUserTestSuite struct {
 	suite.Suite
 	grpcServer     *grpcapp.Server
-	userGrpcClient userpb.UserServiceClient
+	userGrpcClient pb.UserServiceClient
 	userGrpcConn   *grpc.ClientConn
 	userTestUtil   *util.UserTest
 	postgresDB     *gorm.DB
 	redisDB        *redis.ClusterClient
+	redisTestUtil  *util.RedisTest
 	conf           *config.Config
 	logger         *logrus.Logger
 }
@@ -44,9 +46,10 @@ func (c *CreateUserTestSuite) SetupSuite() {
 	c.logger = logger
 
 	c.userTestUtil = util.NewUserTest(postgresDb, logger)
+	c.redisTestUtil = util.NewRedisTest(c.redisDB, c.logger)
 
 	go c.grpcServer.Run()
-	
+
 	time.Sleep(2 * time.Second)
 
 	userGrpcClient, userGrpcConn := util.NewGrpcUserClient(c.conf.ApiGateway.BaseUrl)
@@ -58,7 +61,9 @@ func (c *CreateUserTestSuite) TearDownSuite() {
 	c.grpcServer.Stop()
 	c.userGrpcConn.Close()
 
+	c.redisTestUtil.Flushall()
 	c.redisDB.Close()
+
 	sqlDB, _ := c.postgresDB.DB()
 	sqlDB.Close()
 }
@@ -74,7 +79,8 @@ func (c *CreateUserTestSuite) Test_Success() {
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	req := &userpb.RegisterRequest{
+	req := &pb.RegisterRequest{
+		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
 		Password: "Rahasia",
@@ -84,6 +90,25 @@ func (c *CreateUserTestSuite) Test_Success() {
 	assert.NoError(c.T(), err)
 }
 
+func (c *CreateUserTestSuite) Test_WithouthUserId() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
+
+	req := &pb.RegisterRequest{
+		Email:    "johndoe@gmail.com",
+		FullName: "John Doe",
+		Password: "Rahasia",
+	}
+
+	_, err := c.userGrpcClient.Create(ctx, req)
+
+	st, _ := status.FromError(err)
+	assert.Equal(c.T(), codes.InvalidArgument, st.Code())
+}
+
 func (c *CreateUserTestSuite) Test_AlreadyExists() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -91,7 +116,8 @@ func (c *CreateUserTestSuite) Test_AlreadyExists() {
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	req := &userpb.RegisterRequest{
+	req := &pb.RegisterRequest{
+		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
 		Password: "Rahasia",
@@ -101,7 +127,6 @@ func (c *CreateUserTestSuite) Test_AlreadyExists() {
 	_, err := c.userGrpcClient.Create(ctx, req)
 
 	st, _ := status.FromError(err)
-
 	assert.Equal(c.T(), codes.AlreadyExists, st.Code())
 }
 
@@ -109,7 +134,8 @@ func (c *CreateUserTestSuite) Test_Unauthenticated() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	req := &userpb.RegisterRequest{
+	req := &pb.RegisterRequest{
+		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
 		Password: "Rahasia",
