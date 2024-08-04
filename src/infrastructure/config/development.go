@@ -41,10 +41,15 @@ func setUpForDevelopment(logger *logrus.Logger) *Config {
 	apiGatewayConf.BasicAuthUsername = viper.GetString("API_GATEWAY_BASIC_AUTH_USERNAME")
 	apiGatewayConf.BasicAuthPassword = viper.GetString("API_GATEWAY_BASIC_AUTH_PASSWORD")
 
+	jwtConf := new(jwt)
+	jwtConf.PrivateKey = loadRSAPrivateKey(viper.GetString("JWT_PRIVATE_KEY"), logger)
+	jwtConf.PublicKey = loadRSAPublicKey(viper.GetString("JWT_PUBLIC_KEY"), logger)
+
 	return &Config{
 		CurrentApp: currentAppConf,
 		Postgres:   postgresConf,
 		Redis:      redisConf,
 		ApiGateway: apiGatewayConf,
+		Jwt:        jwtConf,
 	}
 }

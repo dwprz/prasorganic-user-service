@@ -32,6 +32,11 @@ func setUpForNonDevelopment(appStatus string, logger *logrus.Logger) *Config {
 		logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "KVv2.Get"}).Fatal(err)
 	}
 
+	jwtSecrets, err := client.KVv2(mountPath).Get(context.Background(), "jwt")
+	if err != nil {
+		logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "KVv2.Get"}).Fatal(err)
+	}
+
 	currentAppConf := new(currentApp)
 	currentAppConf.RestfulAddress = userServiceSecrets.Data["RESTFUL_ADDRESS"].(string)
 	currentAppConf.GrpcPort = userServiceSecrets.Data["GRPC_PORT"].(string)
@@ -57,10 +62,15 @@ func setUpForNonDevelopment(appStatus string, logger *logrus.Logger) *Config {
 	apiGatewayConf.BasicAuthUsername = apiGatewaySecrets.Data["BASIC_AUTH_PASSWORD"].(string)
 	apiGatewayConf.BasicAuthPassword = apiGatewaySecrets.Data["BASIC_AUTH_USERNAME"].(string)
 
+	jwtConf := new(jwt)
+	jwtConf.PrivateKey = loadRSAPrivateKey(jwtSecrets.Data["PRIVATE_KEY"].(string), logger)
+	jwtConf.PublicKey = loadRSAPublicKey(jwtSecrets.Data["PUBLIC_KEY"].(string), logger)
+
 	return &Config{
 		CurrentApp: currentAppConf,
 		Postgres:   postgresConf,
 		Redis:      redisConf,
 		ApiGateway: apiGatewayConf,
+		Jwt:        jwtConf,
 	}
 }

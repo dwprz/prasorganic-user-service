@@ -13,6 +13,9 @@ import (
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/interceptor"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
+	"github.com/dwprz/prasorganic-user-service/src/core/restful/handler"
+	"github.com/dwprz/prasorganic-user-service/src/core/restful/middleware"
+	"github.com/dwprz/prasorganic-user-service/src/core/restful/restful"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/database"
 	"github.com/dwprz/prasorganic-user-service/src/repository"
@@ -58,6 +61,14 @@ func main() {
 	defer grpcServer.Stop()
 
 	go grpcServer.Run()
+
+	userRestfulHandler := handler.NewUserRestful(userService)
+	middleware := middleware.New(conf, logger)
+
+	restfulServer := restful.NewServer(userRestfulHandler, middleware, conf)
+	defer restfulServer.Stop()
+
+	go restfulServer.Run()
 
 	<-closeCH
 }
