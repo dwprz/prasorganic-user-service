@@ -3,10 +3,12 @@ package integration_test
 import (
 	"context"
 	"encoding/base64"
-
+	"testing"
+	"time"
 	pb "github.com/dwprz/prasorganic-proto/protogen/user"
 	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/dwprz/prasorganic-user-service/test/util"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
@@ -16,18 +18,16 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"testing"
-	"time"
 	"gorm.io/gorm"
 )
 
 // *nyalakan nginx dan database nya terlebih dahulu
 // go test -v ./test/integration -count=1 -p=1
-// go test -run ^TestIntegration_UpdateRefreshToken$ -v ./test/integration -count=1
+// go test -run ^TestIntegration_SetNullRefreshToken$ -v ./test/integration -count=1
 
-type UpdateRefreshTokenTestSuite struct {
+type SetNullRefreshTokenTestSuite struct {
 	suite.Suite
-	email          string
+	user           *entity.User
 	grpcServer     *grpcapp.Server
 	userGrpcClient pb.UserServiceClient
 	userGrpcConn   *grpc.ClientConn
@@ -39,7 +39,7 @@ type UpdateRefreshTokenTestSuite struct {
 	logger         *logrus.Logger
 }
 
-func (u *UpdateRefreshTokenTestSuite) SetupSuite() {
+func (u *SetNullRefreshTokenTestSuite) SetupSuite() {
 	grpcServer, postgresDb, redisDB, conf, logger := util.NewGrpcServer()
 	u.grpcServer = grpcServer
 	u.postgresDB = postgresDb
@@ -58,10 +58,10 @@ func (u *UpdateRefreshTokenTestSuite) SetupSuite() {
 	u.userGrpcClient = userGrpcClient
 	u.userGrpcConn = userGrpcConn
 
-	u.email = u.userTestUtil.Create().Email
+	u.user = u.userTestUtil.Create()
 }
 
-func (u *UpdateRefreshTokenTestSuite) TearDownSuite() {
+func (u *SetNullRefreshTokenTestSuite) TearDownSuite() {
 	u.userTestUtil.Delete()
 	sqlDB, _ := u.postgresDB.DB()
 	sqlDB.Close()
@@ -73,64 +73,32 @@ func (u *UpdateRefreshTokenTestSuite) TearDownSuite() {
 	u.userGrpcConn.Close()
 }
 
-func (u *UpdateRefreshTokenTestSuite) Test_Success() {
+func (u *SetNullRefreshTokenTestSuite) Test_SetNull() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	req := &pb.RefreshToken{
-		Email: u.email,
-		Token: `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOj
-				E3MjUxNzIwMDUsImlkIjoiMV9pUGtNbjk4c19ObXNRZ1Q1T
-				WtlIiwiaXNzIjoicHJhc29yZ2FuaWMtYXV0aC1zZXJ2aWNl
-				In0.cVJL1ivJ5wDECYwBQtA39R_HMkEaG4HiRHxZSJBl0EL
-				5_EcuKq5v7QscveiFYd7CEsRRtnHv3hvosa7pndWgZwfOBY
-				pmAybLh6mfgjADUXxtvBzPMT7NGab2rv5ORiv8y4FvOQ45x
-				eKwNKz0Wr2wxiD4tfyzop3_D9OB-ta3F6E`,
-	}
+	req := &pb.RefreshToken{Token: u.user.RefreshToken}
 
-	_, err := u.userGrpcClient.UpdateRefreshToken(ctx, req)
+	_, err := u.userGrpcClient.SetNullRefreshToken(ctx, req)
 	assert.NoError(u.T(), err)
 }
 
-func (u *UpdateRefreshTokenTestSuite) Test_SetNull() {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
-	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
-
-	req := &pb.RefreshToken{
-		Email: u.email,
-		Token: "",
-	}
-
-	_, err := u.userGrpcClient.UpdateRefreshToken(ctx, req)
-	assert.NoError(u.T(), err)
-}
-
-func (u *UpdateRefreshTokenTestSuite) Test_Unauthenticated() {
+func (u *SetNullRefreshTokenTestSuite) Test_Unauthenticated() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	req := &pb.RefreshToken{
-		Email: u.email,
-		Token: `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOj
-				E3MjUxNzIwMDUsImlkIjoiMV9pUGtNbjk4c19ObXNRZ1Q1T
-				WtlIiwiaXNzIjoicHJhc29yZ2FuaWMtYXV0aC1zZXJ2aWNl
-				In0.cVJL1ivJ5wDECYwBQtA39R_HMkEaG4HiRHxZSJBl0EL
-				5_EcuKq5v7QscveiFYd7CEsRRtnHv3hvosa7pndWgZwfOBY
-				pmAybLh6mfgjADUXxtvBzPMT7NGab2rv5ORiv8y4FvOQ45x
-				eKwNKz0Wr2wxiD4tfyzop3_D9OB-ta3F6E`,
+		Token: u.user.RefreshToken,
 	}
 
-	_, err := u.userGrpcClient.UpdateRefreshToken(ctx, req)
+	_, err := u.userGrpcClient.SetNullRefreshToken(ctx, req)
 	st, _ := status.FromError(err)
 	assert.Equal(u.T(), codes.Unauthenticated, st.Code())
 }
 
-func TestIntegration_UpdateRefreshToken(t *testing.T) {
-	suite.Run(t, new(UpdateRefreshTokenTestSuite))
+func TestIntegration_SetNullRefreshToken(t *testing.T) {
+	suite.Run(t, new(SetNullRefreshTokenTestSuite))
 }

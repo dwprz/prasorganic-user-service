@@ -90,12 +90,29 @@ func (u *UserImpl) Upsert(ctx context.Context, data *dto.UpsertReq) (*entity.Use
 	return user, nil
 }
 
-func (u *UserImpl) UpdateRefreshToken(ctx context.Context, data *dto.UpdateRefreshToken) error {
+func (u *UserImpl) AddRefreshToken(ctx context.Context, data *dto.AddRefreshTokenReq) error {
 	user := new(entity.User)
 
 	query := `UPDATE users SET refresh_token = $1, updated_at = now() WHERE email = $2 RETURNING *;`
 
 	res := u.db.WithContext(ctx).Raw(query, data.RefreshToken, data.Email).Scan(user)
+	if res.Error != nil {
+		return res.Error
+	}
+
+	if res.RowsAffected > 0 {
+		u.userCache.Cache(ctx, user)
+	}
+
+	return nil
+}
+
+func (u *UserImpl) SetNullRefreshToken(ctx context.Context, refreshToken string) error {
+	user := new(entity.User)
+
+	query := `UPDATE users SET refresh_token = NULL, updated_at = now() WHERE refresh_token = $1 RETURNING *;`
+
+	res := u.db.WithContext(ctx).Raw(query, refreshToken).Scan(user)
 	if res.Error != nil {
 		return res.Error
 	}

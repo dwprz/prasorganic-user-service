@@ -4,7 +4,6 @@ import (
 	"context"
 
 	pb "github.com/dwprz/prasorganic-proto/protogen/user"
-	"github.com/dwprz/prasorganic-user-service/src/common/helper"
 	"github.com/dwprz/prasorganic-user-service/src/interface/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/jinzhu/copier"
@@ -60,8 +59,8 @@ func (u *UserGrpcImpl) FindByEmail(ctx context.Context, e *pb.Email) (*pb.FindUs
 	return &pb.FindUserResponse{Data: user}, nil
 }
 
-func (u *UserGrpcImpl) FindByRefreshToken(ctx context.Context, data *pb.RefreshToken) (*pb.FindUserResponse, error) {
-	res, err := u.userService.FindByRefreshToken(ctx, data.Token)
+func (u *UserGrpcImpl) FindByRefreshToken(ctx context.Context, t *pb.RefreshToken) (*pb.FindUserResponse, error) {
+	res, err := u.userService.FindByRefreshToken(ctx, t.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -103,15 +102,18 @@ func (u *UserGrpcImpl) Upsert(ctx context.Context, data *pb.LoginWithGoogleReque
 	return user, nil
 }
 
-func (u *UserGrpcImpl) UpdateRefreshToken(ctx context.Context, t *pb.RefreshToken) (*emptypb.Empty, error) {
-	req := &dto.UpdateRefreshToken{
+func (u *UserGrpcImpl) AddRefreshToken(ctx context.Context, t *pb.AddRefreshToken) (*emptypb.Empty, error) {
+	req := &dto.AddRefreshTokenReq{
 		Email:        t.Email,
-		RefreshToken: helper.ConvertToStringPointer(t.Token),
+		RefreshToken: t.Token,
 	}
 
-	if err := u.userService.UpdateRefreshToken(ctx, req); err != nil {
-		return nil, err
-	}
+	err := u.userService.AddRefreshToken(ctx, req)
+	return nil, err
+}
 
-	return nil, nil
+func (u *UserGrpcImpl) SetNullRefreshToken(ctx context.Context, t *pb.RefreshToken) (*emptypb.Empty, error) {
+
+	err := u.userService.SetNullRefreshToken(ctx, t.Token)
+	return nil, err
 }

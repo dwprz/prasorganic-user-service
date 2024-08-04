@@ -11,5 +11,6 @@ type User interface {
 	FindByEmail(ctx context.Context, email string) (*entity.User, error)
 	FindByRefreshToken(ctx context.Context, refreshToken string) (*entity.User, error)
 	Upsert(ctx context.Context, data *dto.UpsertReq) (*entity.User, error)
-	UpdateRefreshToken(ctx context.Context, data *dto.UpdateRefreshToken) error
+	AddRefreshToken(ctx context.Context, data *dto.AddRefreshTokenReq) error
+	SetNullRefreshToken(ctx context.Context, refreshToken string) error
 }

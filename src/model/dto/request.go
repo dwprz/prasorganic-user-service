@@ -15,7 +15,7 @@ type UpsertReq struct {
 	RefreshToken string `json:"refresh_token" validate:"required,min=50,max=500"`
 }
 
-type UpdateRefreshToken struct {
-	Email        string  `json:"email" validate:"required,email,min=5,max=100"`
-	RefreshToken *string `json:"refresh_token" validate:"omitempty,min=50,max=500"`
+type AddRefreshTokenReq struct {
+	Email        string `json:"email" validate:"required,email,min=5,max=100"`
+	RefreshToken string `json:"refresh_token" validate:"required,min=50,max=500"`
 }

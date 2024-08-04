@@ -44,8 +44,14 @@ func (u *UserMock) Upsert(ctx context.Context, data *dto.UpsertReq) (*entity.Use
 	return arguments.Get(0).(*entity.User), arguments.Error(1)
 }
 
-func (u *UserMock) UpdateRefreshToken(ctx context.Context, data *dto.UpdateRefreshToken) error {
+func (u *UserMock) AddRefreshToken(ctx context.Context, data *dto.AddRefreshTokenReq) error {
 	arguments := u.Mock.Called(ctx, data)
+
+	return arguments.Error(0)
+}
+
+func (u *UserMock) SetNullRefreshToken(ctx context.Context, refreshToken string) error {
+	arguments := u.Mock.Called(ctx, refreshToken)
 
 	return arguments.Error(0)
 }

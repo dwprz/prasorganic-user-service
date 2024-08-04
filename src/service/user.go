@@ -82,12 +82,24 @@ func (u *UserImpl) Upsert(ctx context.Context, data *dto.UpsertReq) (*entity.Use
 	return res, nil
 }
 
-func (u *UserImpl) UpdateRefreshToken(ctx context.Context, data *dto.UpdateRefreshToken) error {
+func (u *UserImpl) AddRefreshToken(ctx context.Context, data *dto.AddRefreshTokenReq) error {
 	if err := u.validate.Struct(data); err != nil {
 		return err
 	}
 
-	if err := u.userRepository.UpdateRefreshToken(ctx, data); err != nil {
+	if err := u.userRepository.AddRefreshToken(ctx, data); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *UserImpl) SetNullRefreshToken(ctx context.Context, refreshToken string) error {
+	if err := u.validate.VarCtx(ctx, refreshToken, `required,min=50,max=500`); err != nil {
+		return err
+	}
+
+	if err := u.userRepository.SetNullRefreshToken(ctx, refreshToken); err != nil {
 		return err
 	}
 
