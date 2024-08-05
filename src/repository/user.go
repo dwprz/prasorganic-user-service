@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+
 	"github.com/dwprz/prasorganic-user-service/src/common/errors"
 	"github.com/dwprz/prasorganic-user-service/src/interface/cache"
 	"github.com/dwprz/prasorganic-user-service/src/interface/repository"
@@ -10,7 +11,10 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
+
+// *caching nya ada yang menggunakan ctx.Background() supaya tidak dicancel, karena ada case context lintas server
 
 type UserImpl struct {
 	db        *gorm.DB
@@ -41,7 +45,8 @@ func (u *UserImpl) Create(ctx context.Context, data *dto.CreateReq) error {
 		return err
 	}
 
-	u.userCache.Cache(ctx, user)
+	go u.userCache.Cache(context.Background(), user)
+
 	return nil
 }
 
@@ -57,7 +62,8 @@ func (u *UserImpl) FindByFields(ctx context.Context, fields *entity.User) (*enti
 		return nil, nil
 	}
 
-	u.userCache.Cache(ctx, user)
+	go u.userCache.Cache(context.Background(), user)
+
 	return user, nil
 }
 
@@ -86,25 +92,47 @@ func (u *UserImpl) Upsert(ctx context.Context, data *dto.UpsertReq) (*entity.Use
 		return nil, err
 	}
 
-	u.userCache.Cache(ctx, user)
+	go u.userCache.Cache(context.Background(), user)
+
 	return user, nil
 }
 
-func (u *UserImpl) AddRefreshToken(ctx context.Context, data *dto.AddRefreshTokenReq) error {
+func (u *UserImpl) UpdateByEmail(ctx context.Context, data *entity.User) (*entity.User, error) {
 	user := new(entity.User)
 
-	query := `UPDATE users SET refresh_token = $1, updated_at = now() WHERE email = $2 RETURNING *;`
+	res := u.db.WithContext(ctx).Where("email = ?", data.Email).Updates(data).Clauses(clause.Returning{
+		Columns: []clause.Column{{
+			Name: "*",
+		}},
+	}).Find(user)
 
-	res := u.db.WithContext(ctx).Raw(query, data.RefreshToken, data.Email).Scan(user)
 	if res.Error != nil {
-		return res.Error
+		return nil, res.Error
 	}
 
 	if res.RowsAffected > 0 {
-		u.userCache.Cache(ctx, user)
+		go u.userCache.Cache(ctx, user)
 	}
 
-	return nil
+	return user, nil
+}
+
+func (u *UserImpl) UpdateEmail(ctx context.Context, email string, newEmail string) (*entity.User, error) {
+	user := new(entity.User)
+
+	query := `UPDATE users SET email = $1, updated_at = now() WHERE email = $2 RETURNING *;`
+
+	res := u.db.WithContext(ctx).Raw(query, newEmail, email).Scan(user)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	if res.RowsAffected > 0 {
+		go u.userCache.Cache(ctx, user)
+	}
+
+	return user, nil
 }
 
 func (u *UserImpl) SetNullRefreshToken(ctx context.Context, refreshToken string) error {
@@ -118,7 +146,7 @@ func (u *UserImpl) SetNullRefreshToken(ctx context.Context, refreshToken string)
 	}
 
 	if res.RowsAffected > 0 {
-		u.userCache.Cache(ctx, user)
+		go u.userCache.Cache(context.Background(), user)
 	}
 
 	return nil

@@ -2,18 +2,25 @@ package test
 
 import (
 	"context"
+	"testing"
+
+	"github.com/dwprz/prasorganic-user-service/src/common/errors"
+	"github.com/dwprz/prasorganic-user-service/src/common/helper"
+	"github.com/dwprz/prasorganic-user-service/src/common/logger"
+	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	svcinterface "github.com/dwprz/prasorganic-user-service/src/interface/service"
 	"github.com/dwprz/prasorganic-user-service/src/mock/cache"
+	"github.com/dwprz/prasorganic-user-service/src/mock/client"
 	"github.com/dwprz/prasorganic-user-service/src/mock/repository"
-	"github.com/dwprz/prasorganic-user-service/src/common/errors"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/dwprz/prasorganic-user-service/src/service"
 	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"testing"
 )
 
 // go test -v ./src/service/test/... -count=1 -p=1
@@ -26,14 +33,19 @@ type CreateTestSuite struct {
 }
 
 func (c *CreateTestSuite) SetupSuite() {
+	logger := logger.New()
+	conf := config.New("DEVELOPMENT", logger)
 	validator := validator.New()
 
 	// mock
 	c.userRepo = repository.NewUserMock()
-	// mock
 	userCache := cache.NewUserMock()
+	otpGrpcClient := client.NewOtpGrpcMock()
+	otpGrpcConn := new(grpc.ClientConn)
 
-	c.userService = service.NewUser(validator, c.userRepo, userCache)
+	grpcClient := grpcapp.NewClient(otpGrpcClient, otpGrpcConn, logger)
+	helper := helper.New(conf, logger)
+	c.userService = service.NewUser(grpcClient, validator, c.userRepo, userCache, helper)
 }
 
 func (c *CreateTestSuite) Test_Succsess() {

@@ -14,7 +14,7 @@ func init() {
 		log.Fatalf("failed to get current directory: %v", err)
 	}
 
-	dir := path.Join(filename, "../../../../../")
+	dir := path.Join(filename, "../../../")
 
 	err = os.Chdir(dir)
 	if err != nil {

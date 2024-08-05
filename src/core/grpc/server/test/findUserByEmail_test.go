@@ -2,7 +2,11 @@ package test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	pb "github.com/dwprz/prasorganic-proto/protogen/user"
+	"github.com/dwprz/prasorganic-user-service/src/common/helper"
 	"github.com/dwprz/prasorganic-user-service/src/common/logger"
 	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/interceptor"
@@ -16,8 +20,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
-	"testing"
-	"time"
 )
 
 // go test -v ./src/core/grpc/server/test/... -count=1 -p=1
@@ -35,12 +37,13 @@ type FindUserByEmailTestSuite struct {
 func (f *FindUserByEmailTestSuite) SetupSuite() {
 	f.logger = logger.New()
 	conf := config.New("DEVELOPMENT", f.logger)
+	helper := helper.New(conf, f.logger)
 
 	// mock
 	f.userService = service.NewUserMock()
 
 	userGrpcServer := server.NewUserGrpc(f.logger, f.userService)
-	unaryResponseInterceptor := interceptor.NewUnaryResponse(f.logger)
+	unaryResponseInterceptor := interceptor.NewUnaryResponse(f.logger, helper)
 
 	f.grpcServer = grpcapp.NewServer(conf.CurrentApp.GrpcPort, userGrpcServer, unaryResponseInterceptor, f.logger)
 

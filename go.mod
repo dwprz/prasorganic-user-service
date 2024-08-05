@@ -3,7 +3,7 @@ module github.com/dwprz/prasorganic-user-service
 go 1.21.3
 
 require (
-	github.com/dwprz/prasorganic-proto v0.0.16
+	github.com/dwprz/prasorganic-proto v0.0.21
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/hashicorp/vault/api v1.14.0
 	github.com/jackc/pgx/v5 v5.5.5
@@ -40,10 +40,12 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/otiai10/copy v1.6.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
+	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
+	github.com/sony/gobreaker/v2 v2.0.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect

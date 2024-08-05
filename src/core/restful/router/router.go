@@ -8,4 +8,8 @@ import (
 
 func Create(app *fiber.App, h *handler.UserRestful, m *middleware.Middleware) {
 	app.Add("GET", "/api/users/current", m.VerifyJwt, h.GetCurrent)
+	app.Add("PATCH", "/api/users/current", m.VerifyJwt, h.UpdateProfile)
+	app.Add("PATCH", "/api/users/current/password", m.VerifyJwt, h.UpdatePassword)
+	app.Add("PATCH", "/api/users/current/email", m.VerifyJwt, h.UpdateEmail)
+	app.Add("PATCH", "/api/users/current/email/verify", m.VerifyJwt, h.VerifyUpdateEmail)
 }

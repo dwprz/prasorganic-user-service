@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/stretchr/testify/mock"
@@ -44,10 +43,23 @@ func (u *UserMock) Upsert(ctx context.Context, data *dto.UpsertReq) (*entity.Use
 	return arguments.Get(0).(*entity.User), arguments.Error(1)
 }
 
-func (u *UserMock) AddRefreshToken(ctx context.Context, data *dto.AddRefreshTokenReq) error {
+func (u *UserMock) UpdateByEmail(ctx context.Context, data *entity.User) (*entity.User, error) {
 	arguments := u.Mock.Called(ctx, data)
 
-	return arguments.Error(0)
+	if arguments.Get(0) == nil {
+		return nil, arguments.Error(1)
+	}
+
+	return arguments.Get(0).(*entity.User), arguments.Error(1)
+}
+func (u *UserMock) UpdateEmail(ctx context.Context, email string, newEmail string) (*entity.User, error) {
+	arguments := u.Mock.Called(ctx, email, newEmail)
+
+	if arguments.Get(0) == nil {
+		return nil, arguments.Error(1)
+	}
+
+	return arguments.Get(0).(*entity.User), arguments.Error(1)
 }
 
 func (u *UserMock) SetNullRefreshToken(ctx context.Context, refreshToken string) error {

@@ -1,6 +1,8 @@
 package dto
 
-import "time"
+import (
+	"time"
+)
 
 type SanitizedUserRes struct {
 	UserId       string    `json:"user_id"`
@@ -11,4 +13,14 @@ type SanitizedUserRes struct {
 	Whatsapp     string    `json:"whatsapp"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type UpdateEmailRes struct {
+	Email    string `json:"email" validate:"required,email,min=5,max=100"`
+	NewEmail string `json:"new_email" validate:"required,email,min=5,max=100"`
+}
+
+type VerifyUpdateEmailRes struct {
+	Data        *SanitizedUserRes
+	AccessToken string
 }

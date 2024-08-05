@@ -43,11 +43,11 @@ type jwt struct {
 }
 
 type Config struct {
-	CurrentApp *currentApp
-	Postgres   *postgres
-	Redis      *redis
-	ApiGateway *apiGateway
-	Jwt        *jwt
+	CurrentApp           *currentApp
+	Postgres             *postgres
+	Redis                *redis
+	ApiGateway           *apiGateway
+	Jwt                  *jwt
 }
 
 func New(appStatus string, logger *logrus.Logger) *Config {

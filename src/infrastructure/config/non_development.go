@@ -67,10 +67,10 @@ func setUpForNonDevelopment(appStatus string, logger *logrus.Logger) *Config {
 	jwtConf.PublicKey = loadRSAPublicKey(jwtSecrets.Data["PUBLIC_KEY"].(string), logger)
 
 	return &Config{
-		CurrentApp: currentAppConf,
-		Postgres:   postgresConf,
-		Redis:      redisConf,
-		ApiGateway: apiGatewayConf,
-		Jwt:        jwtConf,
+		CurrentApp:           currentAppConf,
+		Postgres:             postgresConf,
+		Redis:                redisConf,
+		ApiGateway:           apiGatewayConf,
+		Jwt:                  jwtConf,
 	}
 }

@@ -2,22 +2,17 @@ package helper
 
 import (
 	"context"
+	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"google.golang.org/grpc/metadata"
 )
 
-type Metadata struct {
-	Host     string
-	Ip       string
-	Protocol string
-}
-
-func GetMetadata(ctx context.Context) *Metadata {
+func (h *HelperImpl) GetMetadata(ctx context.Context) *entity.Metadata {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return new(Metadata)
+		return new(entity.Metadata)
 	}
 
-	m := new(Metadata)
+	m := new(entity.Metadata)
 
 	hosts := md.Get("Host")
 	if len(hosts) > 0 {

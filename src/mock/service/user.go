@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/stretchr/testify/mock"
@@ -52,6 +51,38 @@ func (u *UserMock) Upsert(ctx context.Context, data *dto.UpsertReq) (*entity.Use
 	}
 
 	return arguments.Get(0).(*entity.User), arguments.Error(1)
+}
+
+func (u *UserMock) UpdateProfile(ctx context.Context, data *dto.UpdateProfileReq) (*entity.User, error) {
+	arguments := u.Mock.Called(ctx, data)
+
+	if arguments.Get(0) == nil {
+		return nil, arguments.Error(1)
+	}
+
+	return arguments.Get(0).(*entity.User), arguments.Error(1)
+}
+
+func (u *UserMock) UpdatePassword(ctx context.Context, data *dto.UpdatePasswordReq) error {
+	arguments := u.Mock.Called(ctx, data)
+
+	return arguments.Error(0)
+}
+
+func (u *UserMock) UpdateEmail(ctx context.Context, data *dto.UpdateEmailReq) (newEmail string, err error) {
+	arguments := u.Mock.Called(ctx, data)
+
+	return arguments.String(0), arguments.Error(1)
+}
+
+func (u *UserMock) VerifyUpdateEmail(ctx context.Context, data *dto.VerifyUpdateEmailReq) (*dto.VerifyUpdateEmailRes, error) {
+	arguments := u.Mock.Called(ctx, data)
+
+	if arguments.Get(0) == nil {
+		return nil, nil
+	}
+
+	return arguments.Get(0).(*dto.VerifyUpdateEmailRes), arguments.Error(1)
 }
 
 func (u *UserMock) AddRefreshToken(ctx context.Context, data *dto.AddRefreshTokenReq) error {

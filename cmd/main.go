@@ -9,13 +9,16 @@ import (
 	"syscall"
 
 	"github.com/dwprz/prasorganic-user-service/src/cache"
+	"github.com/dwprz/prasorganic-user-service/src/common/helper"
 	"github.com/dwprz/prasorganic-user-service/src/common/logger"
+	"github.com/dwprz/prasorganic-user-service/src/core/grpc/client"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/interceptor"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
 	"github.com/dwprz/prasorganic-user-service/src/core/restful/handler"
 	"github.com/dwprz/prasorganic-user-service/src/core/restful/middleware"
 	"github.com/dwprz/prasorganic-user-service/src/core/restful/restful"
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/cbreaker"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/database"
 	"github.com/dwprz/prasorganic-user-service/src/repository"
@@ -50,11 +53,18 @@ func main() {
 	postgresDb := database.NewPostgres(conf)
 	redisDb := database.NewRedisCluster(conf)
 	validator := validator.New()
+	helper := helper.New(conf, logger)
+
+	cbreaker := cbreaker.New(logger)
+	unaryRequestInterceptor := interceptor.NewUnaryRequest(conf)
+	otpGrpcClient, otpGrpcConn := client.NewOtpGrpc(cbreaker.OtpGrpc, conf, unaryRequestInterceptor)
+	grpcClient := grpc.NewClient(otpGrpcClient, otpGrpcConn, logger)
+	defer grpcClient.Close()
 
 	userCache := cache.NewUser(redisDb, logger)
 	userRepository := repository.NewUser(postgresDb, userCache)
-	userService := service.NewUser(validator, userRepository, userCache)
-	unaryResInterceptor := interceptor.NewUnaryResponse(logger)
+	userService := service.NewUser(grpcClient, validator, userRepository, userCache, helper)
+	unaryResInterceptor := interceptor.NewUnaryResponse(logger, helper)
 	userGrpcServer := server.NewUserGrpc(logger, userService)
 
 	grpcServer := grpc.NewServer(conf.CurrentApp.GrpcPort, userGrpcServer, unaryResInterceptor, logger)
@@ -62,7 +72,7 @@ func main() {
 
 	go grpcServer.Run()
 
-	userRestfulHandler := handler.NewUserRestful(userService)
+	userRestfulHandler := handler.NewUserRestful(userService, helper)
 	middleware := middleware.New(conf, logger)
 
 	restfulServer := restful.NewServer(userRestfulHandler, middleware, conf)

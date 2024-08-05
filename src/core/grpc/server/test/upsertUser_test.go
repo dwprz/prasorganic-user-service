@@ -2,13 +2,17 @@ package test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	pb "github.com/dwprz/prasorganic-proto/protogen/user"
-	"github.com/dwprz/prasorganic-user-service/src/mock/service"
+	"github.com/dwprz/prasorganic-user-service/src/common/helper"
 	"github.com/dwprz/prasorganic-user-service/src/common/logger"
 	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/interceptor"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	"github.com/dwprz/prasorganic-user-service/src/mock/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/dwprz/prasorganic-user-service/test/util"
@@ -18,8 +22,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
-	"testing"
-	"time"
 )
 
 // go test -v ./src/core/grpc/server/test/... -count=1 -p=1
@@ -37,12 +39,13 @@ type UpsertUserTestSuite struct {
 func (u *UpsertUserTestSuite) SetupSuite() {
 	u.logger = logger.New()
 	conf := config.New("DEVELOPMENT", u.logger)
+	helper := helper.New(conf, u.logger)
 
 	// mock
 	u.userService = service.NewUserMock()
 
 	userGrpcServer := server.NewUserGrpc(u.logger, u.userService)
-	unaryResponseInterceptor := interceptor.NewUnaryResponse(u.logger)
+	unaryResponseInterceptor := interceptor.NewUnaryResponse(u.logger, helper)
 
 	u.grpcServer = grpcapp.NewServer(conf.CurrentApp.GrpcPort, userGrpcServer, unaryResponseInterceptor, u.logger)
 

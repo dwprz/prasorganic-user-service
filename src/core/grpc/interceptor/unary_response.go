@@ -2,8 +2,9 @@ package interceptor
 
 import (
 	"context"
+
 	"github.com/dwprz/prasorganic-user-service/src/common/errors"
-	"github.com/dwprz/prasorganic-user-service/src/common/helper"
+	"github.com/dwprz/prasorganic-user-service/src/interface/helper"
 	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -27,21 +28,23 @@ Flow kerja server interceptor:
 
 type UnaryResponse struct {
 	logger *logrus.Logger
+	helper helper.Helper
 }
 
-func NewUnaryResponse(l *logrus.Logger) *UnaryResponse {
+func NewUnaryResponse(l *logrus.Logger, h helper.Helper) *UnaryResponse {
 	return &UnaryResponse{
 		logger: l,
+		helper: h,
 	}
 }
 
-func (i *UnaryResponse) Error(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+func (u *UnaryResponse) Error(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	res, err := handler(ctx, req)
 
 	if err != nil {
-		m := helper.GetMetadata(ctx)
+		m := u.helper.GetMetadata(ctx)
 
-		i.logger.WithFields(logrus.Fields{
+		u.logger.WithFields(logrus.Fields{
 			"host":     m.Host,
 			"ip":       m.Ip,
 			"protocol": m.Protocol,
@@ -75,12 +78,12 @@ func (i *UnaryResponse) Error(ctx context.Context, req any, info *grpc.UnaryServ
 	return res, nil
 }
 
-func (i *UnaryResponse) Recovery(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+func (u *UnaryResponse) Recovery(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			m := helper.GetMetadata(ctx)
+			m := u.helper.GetMetadata(ctx)
 
-			i.logger.WithFields(logrus.Fields{
+			u.logger.WithFields(logrus.Fields{
 				"host":     m.Host,
 				"ip":       m.Ip,
 				"protocol": m.Protocol,
