@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// *caching nya ada yang menggunakan ctx.Background() supaya tidak dicancel, karena ada case context lintas server
+// *caching menggunakan ctx.Background() supaya tidak dicancel, karena ada case context lintas server
 
 type UserImpl struct {
 	db        *gorm.DB
@@ -111,7 +111,7 @@ func (u *UserImpl) UpdateByEmail(ctx context.Context, data *entity.User) (*entit
 	}
 
 	if res.RowsAffected > 0 {
-		go u.userCache.Cache(ctx, user)
+		go u.userCache.Cache(context.Background(), user)
 	}
 
 	return user, nil
@@ -129,7 +129,8 @@ func (u *UserImpl) UpdateEmail(ctx context.Context, email string, newEmail strin
 	}
 
 	if res.RowsAffected > 0 {
-		go u.userCache.Cache(ctx, user)
+		go u.userCache.DeleteByEmail(context.Background(), email)
+		go u.userCache.Cache(context.Background(), user)
 	}
 
 	return user, nil

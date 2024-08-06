@@ -13,6 +13,7 @@ import (
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/interceptor"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/imagekit"
 	"github.com/dwprz/prasorganic-user-service/src/mock/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/dwprz/prasorganic-user-service/test/util"
@@ -40,7 +41,8 @@ type CreateUserTestSuite struct {
 func (c *CreateUserTestSuite) SetupSuite() {
 	c.logger = logger.New()
 	conf := config.New("DEVELOPMENT", c.logger)
-	helper := helper.New(conf, c.logger)
+	imageKit := imagekit.New(conf)
+	helper := helper.New(imageKit, conf, c.logger)
 
 	// mock
 	c.userService = service.NewUserMock()

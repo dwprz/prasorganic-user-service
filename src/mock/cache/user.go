@@ -27,3 +27,5 @@ func (u *UserMock) FindByEmail(ctx context.Context, email string) *entity.User {
 
 	return arguments.Get(0).(*entity.User)
 }
+
+func (u *UserMock) DeleteByEmail(ctx context.Context, email string) {}

@@ -8,6 +8,7 @@ import (
 	"github.com/dwprz/prasorganic-user-service/src/common/logger"
 	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/imagekit"
 	svcinterface "github.com/dwprz/prasorganic-user-service/src/interface/service"
 	"github.com/dwprz/prasorganic-user-service/src/mock/cache"
 	"github.com/dwprz/prasorganic-user-service/src/mock/client"
@@ -43,7 +44,8 @@ func (f *FindByEmailTestSuite) SetupSuite() {
 	otpGrpcConn := new(grpc.ClientConn)
 
 	grpcClient := grpcapp.NewClient(otpGrpcClient, otpGrpcConn, logger)
-	helper := helper.New(conf, logger)
+	imageKit := imagekit.New(conf)
+	helper := helper.New(imageKit, conf, logger)
 	f.userService = service.NewUser(grpcClient, validator, f.userRepo, f.userCache, helper)
 }
 

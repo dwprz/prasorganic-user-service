@@ -12,6 +12,7 @@ import (
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/interceptor"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/imagekit"
 	"github.com/dwprz/prasorganic-user-service/src/mock/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
@@ -39,7 +40,8 @@ type UpsertUserTestSuite struct {
 func (u *UpsertUserTestSuite) SetupSuite() {
 	u.logger = logger.New()
 	conf := config.New("DEVELOPMENT", u.logger)
-	helper := helper.New(conf, u.logger)
+	imageKit := imagekit.New(conf)
+	helper := helper.New(imageKit, conf, u.logger)
 
 	// mock
 	u.userService = service.NewUserMock()

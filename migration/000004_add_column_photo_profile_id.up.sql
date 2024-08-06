@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN photo_profile_id VARCHAR(100);

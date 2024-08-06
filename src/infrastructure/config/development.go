@@ -45,11 +45,18 @@ func setUpForDevelopment(logger *logrus.Logger) *Config {
 	jwtConf.PrivateKey = loadRSAPrivateKey(viper.GetString("JWT_PRIVATE_KEY"), logger)
 	jwtConf.PublicKey = loadRSAPublicKey(viper.GetString("JWT_PUBLIC_KEY"), logger)
 
+	imageKitConf := new(imageKit)
+	imageKitConf.Id = viper.GetString("IMAGEKIT_ID")
+	imageKitConf.BaseUrl = viper.GetString("IMAGEKIT_BASE_URL")
+	imageKitConf.PrivateKey = viper.GetString("IMAGEKIT_PRIVATE_KEY")
+	imageKitConf.PublicKey = viper.GetString("IMAGEKIT_PUBLIC_KEY")
+
 	return &Config{
-		CurrentApp:           currentAppConf,
-		Postgres:             postgresConf,
-		Redis:                redisConf,
-		ApiGateway:           apiGatewayConf,
-		Jwt:                  jwtConf,
+		CurrentApp: currentAppConf,
+		Postgres:   postgresConf,
+		Redis:      redisConf,
+		ApiGateway: apiGatewayConf,
+		Jwt:        jwtConf,
+		ImageKit:   imageKitConf,
 	}
 }

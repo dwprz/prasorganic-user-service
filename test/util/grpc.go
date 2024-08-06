@@ -14,6 +14,7 @@ import (
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/cbreaker"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/database"
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/imagekit"
 	"github.com/dwprz/prasorganic-user-service/src/repository"
 	"github.com/dwprz/prasorganic-user-service/src/service"
 	"github.com/go-playground/validator/v10"
@@ -28,7 +29,8 @@ func NewGrpcServer() (*grpcapp.Server, *gorm.DB, *redis.ClusterClient, *config.C
 	logger := logger.New()
 	validator := validator.New()
 	conf := config.New("DEVELOPMENT", logger)
-	helper := helper.New(conf, logger)
+	imageKit := imagekit.New(conf)
+	helper := helper.New(imageKit, conf, logger)
 
 	postgresDB := database.NewPostgres(conf)
 	redisDB := database.NewRedisCluster(conf)

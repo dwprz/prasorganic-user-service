@@ -42,12 +42,20 @@ type jwt struct {
 	PublicKey  *rsa.PublicKey
 }
 
+type imageKit struct {
+	Id         string
+	BaseUrl    string
+	PrivateKey string
+	PublicKey  string
+}
+
 type Config struct {
-	CurrentApp           *currentApp
-	Postgres             *postgres
-	Redis                *redis
-	ApiGateway           *apiGateway
-	Jwt                  *jwt
+	CurrentApp *currentApp
+	Postgres   *postgres
+	Redis      *redis
+	ApiGateway *apiGateway
+	Jwt        *jwt
+	ImageKit   *imageKit
 }
 
 func New(appStatus string, logger *logrus.Logger) *Config {

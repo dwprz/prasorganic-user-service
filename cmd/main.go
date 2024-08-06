@@ -21,6 +21,7 @@ import (
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/cbreaker"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/database"
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/imagekit"
 	"github.com/dwprz/prasorganic-user-service/src/repository"
 	"github.com/dwprz/prasorganic-user-service/src/service"
 	"github.com/go-playground/validator/v10"
@@ -52,8 +53,9 @@ func main() {
 	conf := config.New(appStatus, logger)
 	postgresDb := database.NewPostgres(conf)
 	redisDb := database.NewRedisCluster(conf)
+	imageKit := imagekit.New(conf)
+	helper := helper.New(imageKit, conf, logger)
 	validator := validator.New()
-	helper := helper.New(conf, logger)
 
 	cbreaker := cbreaker.New(logger)
 	unaryRequestInterceptor := interceptor.NewUnaryRequest(conf)
@@ -73,7 +75,7 @@ func main() {
 	go grpcServer.Run()
 
 	userRestfulHandler := handler.NewUserRestful(userService, helper)
-	middleware := middleware.New(conf, logger)
+	middleware := middleware.New(imageKit, conf, helper, logger)
 
 	restfulServer := restful.NewServer(userRestfulHandler, middleware, conf)
 	defer restfulServer.Stop()

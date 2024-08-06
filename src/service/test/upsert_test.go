@@ -8,6 +8,7 @@ import (
 	"github.com/dwprz/prasorganic-user-service/src/common/logger"
 	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/imagekit"
 	svcinterface "github.com/dwprz/prasorganic-user-service/src/interface/service"
 	"github.com/dwprz/prasorganic-user-service/src/mock/cache"
 	"github.com/dwprz/prasorganic-user-service/src/mock/client"
@@ -45,7 +46,8 @@ func (u *UpsertTestSuite) SetupSuite() {
 	otpGrpcConn := new(grpc.ClientConn)
 
 	grpcClient := grpcapp.NewClient(otpGrpcClient, otpGrpcConn, u.logger)
-	helper := helper.New(conf, u.logger)
+	imageKit := imagekit.New(conf)
+	helper := helper.New(imageKit, conf, u.logger)
 	u.userService = service.NewUser(grpcClient, validator, u.userRepo, userCache, helper)
 }
 

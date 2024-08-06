@@ -2,11 +2,13 @@ package config
 
 import (
 	"context"
-	vault "github.com/hashicorp/vault/api"
-	"github.com/sirupsen/logrus"
+	"encoding/base64"
 	"log"
 	"os"
 	"strings"
+
+	vault "github.com/hashicorp/vault/api"
+	"github.com/sirupsen/logrus"
 )
 
 func setUpForNonDevelopment(appStatus string, logger *logrus.Logger) *Config {
@@ -37,6 +39,11 @@ func setUpForNonDevelopment(appStatus string, logger *logrus.Logger) *Config {
 		logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "KVv2.Get"}).Fatal(err)
 	}
 
+	imageKitSecrets, err := client.KVv2(mountPath).Get(context.Background(), "imagekit")
+	if err != nil {
+		logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "KVv2.Get"}).Fatal(err)
+	}
+
 	currentAppConf := new(currentApp)
 	currentAppConf.RestfulAddress = userServiceSecrets.Data["RESTFUL_ADDRESS"].(string)
 	currentAppConf.GrpcPort = userServiceSecrets.Data["GRPC_PORT"].(string)
@@ -63,14 +70,36 @@ func setUpForNonDevelopment(appStatus string, logger *logrus.Logger) *Config {
 	apiGatewayConf.BasicAuthPassword = apiGatewaySecrets.Data["BASIC_AUTH_USERNAME"].(string)
 
 	jwtConf := new(jwt)
-	jwtConf.PrivateKey = loadRSAPrivateKey(jwtSecrets.Data["PRIVATE_KEY"].(string), logger)
-	jwtConf.PublicKey = loadRSAPublicKey(jwtSecrets.Data["PUBLIC_KEY"].(string), logger)
+
+	jwtPrivateKey := jwtSecrets.Data["PRIVATE_KEY"].(string)
+	base64Byte, err := base64.StdEncoding.DecodeString(jwtPrivateKey)
+	if err != nil {
+		logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "base64.StdEncoding.DecodeString"}).Fatal(err)
+	}
+	jwtPrivateKey = string(base64Byte)
+
+	jwtPublicKey := jwtSecrets.Data["Public_KEY"].(string)
+	base64Byte, err = base64.StdEncoding.DecodeString(jwtPublicKey)
+	if err != nil {
+		logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "base64.StdEncoding.DecodeString"}).Fatal(err)
+	}
+	jwtPublicKey = string(base64Byte)
+
+	jwtConf.PrivateKey = loadRSAPrivateKey(jwtPrivateKey, logger)
+	jwtConf.PublicKey = loadRSAPublicKey(jwtPublicKey, logger)
+
+	imageKitConf := new(imageKit)
+	imageKitConf.Id = imageKitSecrets.Data["ID"].(string)
+	imageKitConf.BaseUrl = imageKitSecrets.Data["BASE_URL"].(string)
+	imageKitConf.PrivateKey = imageKitSecrets.Data["PRIVATE_KEY"].(string)
+	imageKitConf.PublicKey = imageKitSecrets.Data["PUBLIC_KEY"].(string)
 
 	return &Config{
-		CurrentApp:           currentAppConf,
-		Postgres:             postgresConf,
-		Redis:                redisConf,
-		ApiGateway:           apiGatewayConf,
-		Jwt:                  jwtConf,
+		CurrentApp: currentAppConf,
+		Postgres:   postgresConf,
+		Redis:      redisConf,
+		ApiGateway: apiGatewayConf,
+		Jwt:        jwtConf,
+		ImageKit:   imageKitConf,
 	}
 }

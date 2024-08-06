@@ -98,23 +98,28 @@ func (u *UserImpl) UpdateProfile(ctx context.Context, data *dto.UpdateProfileReq
 		return nil, err
 	}
 
-	res, err := u.userRepository.FindByFields(ctx, &entity.User{
-		Email: data.Email,
-	})
+	user := u.userCache.FindByEmail(ctx, data.Email)
+	if user == nil {
+		res, err := u.userRepository.FindByFields(ctx, &entity.User{
+			Email: data.Email,
+		})
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		if res == nil {
+			return nil, &errors.Response{HttpCode: 404, GrpcCode: codes.NotFound, Message: "user not found"}
+		}
+
+		user = res
 	}
 
-	if res == nil {
-		return nil, &errors.Response{HttpCode: 404, GrpcCode: codes.NotFound, Message: "user not found"}
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(res.Password), []byte(data.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data.Password)); err != nil {
 		return nil, &errors.Response{HttpCode: 400, GrpcCode: codes.InvalidArgument, Message: "password is invalid"}
 	}
 
-	res, err = u.userRepository.UpdateByEmail(ctx, &entity.User{
+	res, err := u.userRepository.UpdateByEmail(ctx, &entity.User{
 		Email:    data.Email,
 		FullName: data.FullName,
 		Whatsapp: data.Whatsapp,
@@ -132,19 +137,24 @@ func (u *UserImpl) UpdatePassword(ctx context.Context, data *dto.UpdatePasswordR
 		return err
 	}
 
-	res, err := u.userRepository.FindByFields(ctx, &entity.User{
-		Email: data.Email,
-	})
+	user := u.userCache.FindByEmail(ctx, data.Email)
+	if user == nil {
+		res, err := u.userRepository.FindByFields(ctx, &entity.User{
+			Email: data.Email,
+		})
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
+
+		if res == nil {
+			return &errors.Response{HttpCode: 404, GrpcCode: codes.NotFound, Message: "user not found"}
+		}
+
+		user = res
 	}
 
-	if res == nil {
-		return &errors.Response{HttpCode: 404, GrpcCode: codes.NotFound, Message: "user not found"}
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(res.Password), []byte(data.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data.Password)); err != nil {
 		return &errors.Response{HttpCode: 400, GrpcCode: codes.InvalidArgument, Message: "password is invalid"}
 	}
 
@@ -170,19 +180,24 @@ func (u *UserImpl) UpdateEmail(ctx context.Context, data *dto.UpdateEmailReq) (n
 		return "", err
 	}
 
-	res, err := u.userRepository.FindByFields(ctx, &entity.User{
-		Email: data.Email,
-	})
+	user := u.userCache.FindByEmail(ctx, data.Email)
+	if user == nil {
+		res, err := u.userRepository.FindByFields(ctx, &entity.User{
+			Email: data.Email,
+		})
 
-	if err != nil {
-		return "", err
+		if err != nil {
+			return "", err
+		}
+
+		if res == nil {
+			return "", &errors.Response{HttpCode: 404, GrpcCode: codes.NotFound, Message: "user not found"}
+		}
+
+		user = res
 	}
 
-	if res == nil {
-		return "", &errors.Response{HttpCode: 404, GrpcCode: codes.NotFound, Message: "user not found"}
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(res.Password), []byte(data.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data.Password)); err != nil {
 		return "", &errors.Response{HttpCode: 400, GrpcCode: codes.InvalidArgument, Message: "password is invalid"}
 	}
 
@@ -228,6 +243,24 @@ func (u *UserImpl) VerifyUpdateEmail(ctx context.Context, data *dto.VerifyUpdate
 		Data:        user,
 		AccessToken: accessToken,
 	}, nil
+}
+
+func (u *UserImpl) UpdatePhotoProfile(ctx context.Context, data *dto.UpdatePhotoProfileReq) (*entity.User, error) {
+	if err := u.validate.Struct(data); err != nil {
+		return nil, err
+	}
+
+	res, err := u.userRepository.UpdateByEmail(ctx, &entity.User{
+		Email:          data.Email,
+		PhotoProfileId: data.NewPhotoProfileId,
+		PhotoProfile:   data.NewPhotoProfile,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 func (u *UserImpl) AddRefreshToken(ctx context.Context, data *dto.AddRefreshTokenReq) error {

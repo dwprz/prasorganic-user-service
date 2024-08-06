@@ -12,4 +12,5 @@ func Create(app *fiber.App, h *handler.UserRestful, m *middleware.Middleware) {
 	app.Add("PATCH", "/api/users/current/password", m.VerifyJwt, h.UpdatePassword)
 	app.Add("PATCH", "/api/users/current/email", m.VerifyJwt, h.UpdateEmail)
 	app.Add("PATCH", "/api/users/current/email/verify", m.VerifyJwt, h.VerifyUpdateEmail)
+	app.Add("PATCH", "/api/users/current/photo-profile", m.VerifyJwt, m.SaveTemporaryImage, m.ValidateImage, m.UploadToImageKit, h.UpdatePhotoProfile)
 }

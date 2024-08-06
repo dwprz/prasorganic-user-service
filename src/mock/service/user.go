@@ -63,6 +63,16 @@ func (u *UserMock) UpdateProfile(ctx context.Context, data *dto.UpdateProfileReq
 	return arguments.Get(0).(*entity.User), arguments.Error(1)
 }
 
+func ( u *UserMock) UpdatePhotoProfile(ctx context.Context, data *dto.UpdatePhotoProfileReq) (*entity.User, error) {
+	arguments := u.Mock.Called(ctx, data)
+
+	if arguments.Get(0) == nil {
+		return nil, arguments.Error(1)
+	}
+
+	return arguments.Get(0).(*entity.User), arguments.Error(1)
+}
+
 func (u *UserMock) UpdatePassword(ctx context.Context, data *dto.UpdatePasswordReq) error {
 	arguments := u.Mock.Called(ctx, data)
 

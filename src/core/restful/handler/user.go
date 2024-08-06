@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"time"
+
 	"github.com/dwprz/prasorganic-user-service/src/interface/helper"
 	"github.com/dwprz/prasorganic-user-service/src/interface/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
@@ -149,4 +150,24 @@ func (u *UserRestful) VerifyUpdateEmail(c *fiber.Ctx) error {
 	c.Cookie(u.helper.ClearCookie("update_email", "/api/users/current/email/verify")) // clear cookie
 
 	return c.Status(200).JSON(fiber.Map{"data": res.Data})
+}
+
+func (u *UserRestful) UpdatePhotoProfile(c *fiber.Ctx) error {
+	defer u.helper.HandlePanic(c)
+
+	userData := c.Locals("user_data").(jwt.MapClaims)
+	email := userData["email"].(string)
+
+	req := c.Locals("update_photo_profile_req").(dto.UpdatePhotoProfileReq)
+	req.Email = email
+
+	res, err := u.userService.UpdatePhotoProfile(context.Background(), &req)
+	if err != nil {
+		return err
+	}
+
+	user := new(dto.SanitizedUserRes)
+	copier.Copy(user, res)
+
+	return c.Status(200).JSON(fiber.Map{"data": user})
 }
