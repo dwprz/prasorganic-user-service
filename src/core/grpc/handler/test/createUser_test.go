@@ -2,64 +2,47 @@ package test
 
 import (
 	"context"
+	"encoding/base64"
 	"testing"
 	"time"
 
 	pb "github.com/dwprz/prasorganic-proto/protogen/user"
 	"github.com/dwprz/prasorganic-user-service/src/common/errors"
-	"github.com/dwprz/prasorganic-user-service/src/common/helper"
-	"github.com/dwprz/prasorganic-user-service/src/common/logger"
-	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
-	"github.com/dwprz/prasorganic-user-service/src/core/grpc/interceptor"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/imagekit"
 	"github.com/dwprz/prasorganic-user-service/src/mock/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/dwprz/prasorganic-user-service/test/util"
 	"github.com/jinzhu/copier"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
-// go test -v ./src/core/grpc/server/test/... -count=1 -p=1
-// go test -run ^TestServer_CreateUser$ -v ./src/core/grpc/server/test -count=1
+// go test -v ./src/core/grpc/handler/test/... -count=1 -p=1
+// go test -run ^TestServer_CreateUser$ -v ./src/core/grpc/handler/test -count=1
 
 type CreateUserTestSuite struct {
 	suite.Suite
-	grpcServer     *grpcapp.Server
-	userGrpcClient pb.UserServiceClient
-	userGrpcConn   *grpc.ClientConn
-	userService    *service.UserMock
-	logger         *logrus.Logger
+	grpcServer       *server.Grpc
+	userGrpcDelivery pb.UserServiceClient
+	userGrpcConn     *grpc.ClientConn
+	userService      *service.UserMock
 }
 
 func (c *CreateUserTestSuite) SetupSuite() {
-	c.logger = logger.New()
-	conf := config.New("DEVELOPMENT", c.logger)
-	imageKit := imagekit.New(conf)
-	helper := helper.New(imageKit, conf, c.logger)
-
-	// mock
 	c.userService = service.NewUserMock()
-
-	userGrpcServer := server.NewUserGrpc(c.logger, c.userService)
-	unaryResponseInterceptor := interceptor.NewUnaryResponse(c.logger, helper)
-
-	c.grpcServer = grpcapp.NewServer(conf.CurrentApp.GrpcPort, userGrpcServer, unaryResponseInterceptor, c.logger)
+	c.grpcServer = util.InitGrpcServerTest(c.userService)
 
 	go c.grpcServer.Run()
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
-	grpcAddress := "localhost:" + conf.CurrentApp.GrpcPort
-	userGrpcClient, userGrpcConn := util.NewGrpcUserClient(grpcAddress)
-
-	c.userGrpcClient = userGrpcClient
+	userGrpcDelivery, userGrpcConn := util.InitUserGrpcDelivery()
+	c.userGrpcDelivery = userGrpcDelivery
 	c.userGrpcConn = userGrpcConn
 }
 
@@ -81,7 +64,10 @@ func (c *CreateUserTestSuite) Test_Success() {
 	err := copier.Copy(registerReq, userCreate)
 	assert.NoError(c.T(), err)
 
-	_, err = c.userGrpcClient.Create(context.Background(), registerReq)
+	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
+	ctx := metadata.AppendToOutgoingContext(context.Background(), "authorization", "Basic "+auth)
+
+	_, err = c.userGrpcDelivery.Create(ctx, registerReq)
 	assert.NoError(c.T(), err)
 }
 
@@ -99,8 +85,16 @@ func (c *CreateUserTestSuite) Test_AlreadyExists() {
 	err := copier.Copy(registerReq, userCreate)
 	assert.NoError(c.T(), err)
 
-	_, err = c.userGrpcClient.Create(context.Background(), registerReq)
+	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
+	ctx := metadata.AppendToOutgoingContext(context.Background(), "authorization", "Basic "+auth)
+
+	_, err = c.userGrpcDelivery.Create(ctx, registerReq)
 	assert.Error(c.T(), err)
+
+	st, ok :=status.FromError(err)
+	assert.True(c.T(), ok)
+
+	assert.Equal(c.T(), st.Code(), errorRes.GrpcCode)
 }
 
 func TestServer_CreateUser(t *testing.T) {

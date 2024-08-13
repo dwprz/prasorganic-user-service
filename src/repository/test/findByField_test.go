@@ -2,17 +2,14 @@ package test
 
 import (
 	"context"
-	"github.com/dwprz/prasorganic-user-service/src/cache"
-	"github.com/dwprz/prasorganic-user-service/src/common/logger"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	cacheimpl "github.com/dwprz/prasorganic-user-service/src/cache"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/database"
-	chaceinterface "github.com/dwprz/prasorganic-user-service/src/interface/cache"
-	repointerface "github.com/dwprz/prasorganic-user-service/src/interface/repository"
+	"github.com/dwprz/prasorganic-user-service/src/interface/cache"
+	"github.com/dwprz/prasorganic-user-service/src/interface/repository"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
-	"github.com/dwprz/prasorganic-user-service/src/repository"
+	repoimpl "github.com/dwprz/prasorganic-user-service/src/repository"
 	"github.com/dwprz/prasorganic-user-service/test/util"
 	"github.com/redis/go-redis/v9"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -25,26 +22,23 @@ import (
 type FindByFieldTestSuite struct {
 	suite.Suite
 	user          *entity.User
-	userRepo      repointerface.User
+	userRepo      repository.User
 	postgresDB    *gorm.DB
-	userCache     chaceinterface.User
+	userCache     cache.User
 	redisDB       *redis.ClusterClient
-	logger        *logrus.Logger
 	userTestUtil  *util.UserTest
 	redisTestUtil *util.RedisTest
 }
 
 func (f *FindByFieldTestSuite) SetupSuite() {
-	f.logger = logger.New()
-	conf := config.New("DEVELOPMENT", f.logger)
-	f.postgresDB = database.NewPostgres(conf)
-	f.redisDB = database.NewRedisCluster(conf)
+	f.postgresDB = database.NewPostgres()
+	f.redisDB = database.NewRedisCluster()
 
-	f.userCache = cache.NewUser(f.redisDB, f.logger)
+	f.userCache = cacheimpl.NewUser(f.redisDB)
 
-	f.userRepo = repository.NewUser(f.postgresDB, f.userCache)
-	f.userTestUtil = util.NewUserTest(f.postgresDB, f.logger)
-	f.redisTestUtil = util.NewRedisTest(f.redisDB, f.logger)
+	f.userRepo = repoimpl.NewUser(f.postgresDB, f.userCache)
+	f.userTestUtil = util.NewUserTest(f.postgresDB)
+	f.redisTestUtil = util.NewRedisTest(f.redisDB)
 
 	f.user = f.userTestUtil.Create()
 }

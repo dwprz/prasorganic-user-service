@@ -6,14 +6,14 @@ import (
 	"github.com/imagekit-developer/imagekit-go/logger"
 )
 
-func New(conf *config.Config) *imagekit.ImageKit {
-	ik := imagekit.NewFromParams(imagekit.NewParams{
-		PrivateKey:  conf.ImageKit.PrivateKey,
-		PublicKey:   conf.ImageKit.PublicKey,
-		UrlEndpoint: conf.ImageKit.BaseUrl,
+var IK *imagekit.ImageKit
+
+func init() {
+	IK = imagekit.NewFromParams(imagekit.NewParams{
+		PrivateKey:  config.Conf.ImageKit.PrivateKey,
+		PublicKey:   config.Conf.ImageKit.PublicKey,
+		UrlEndpoint: config.Conf.ImageKit.BaseUrl,
 	})
 
-	ik.Logger.SetLevel(logger.ERROR)
-
-	return ik
+	IK.Logger.SetLevel(logger.ERROR)
 }

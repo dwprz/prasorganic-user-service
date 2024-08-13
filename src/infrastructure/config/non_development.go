@@ -3,21 +3,21 @@ package config
 import (
 	"context"
 	"encoding/base64"
-	"log"
 	"os"
 	"strings"
 
+	"github.com/dwprz/prasorganic-user-service/src/common/log"
 	vault "github.com/hashicorp/vault/api"
 	"github.com/sirupsen/logrus"
 )
 
-func setUpForNonDevelopment(appStatus string, logger *logrus.Logger) *Config {
+func setUpForNonDevelopment(appStatus string) *Config {
 	defaultConf := vault.DefaultConfig()
 	defaultConf.Address = os.Getenv("PRASORGANIC_CONFIG_ADDRESS")
 
 	client, err := vault.NewClient(defaultConf)
 	if err != nil {
-		log.Fatalf("vault new client: %v", err)
+		log.Logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "vault.NewClient"}).Fatal(err)
 	}
 
 	client.SetToken(os.Getenv("PRASORGANIC_CONFIG_TOKEN"))
@@ -26,22 +26,22 @@ func setUpForNonDevelopment(appStatus string, logger *logrus.Logger) *Config {
 
 	userServiceSecrets, err := client.KVv2(mountPath).Get(context.Background(), "user-service")
 	if err != nil {
-		logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "KVv2.Get"}).Fatal(err)
+		log.Logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "KVv2.Get"}).Fatal(err)
 	}
 
 	apiGatewaySecrets, err := client.KVv2(mountPath).Get(context.Background(), "api-gateway")
 	if err != nil {
-		logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "KVv2.Get"}).Fatal(err)
+		log.Logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "KVv2.Get"}).Fatal(err)
 	}
 
 	jwtSecrets, err := client.KVv2(mountPath).Get(context.Background(), "jwt")
 	if err != nil {
-		logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "KVv2.Get"}).Fatal(err)
+		log.Logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "KVv2.Get"}).Fatal(err)
 	}
 
 	imageKitSecrets, err := client.KVv2(mountPath).Get(context.Background(), "imagekit")
 	if err != nil {
-		logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "KVv2.Get"}).Fatal(err)
+		log.Logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "KVv2.Get"}).Fatal(err)
 	}
 
 	currentAppConf := new(currentApp)
@@ -74,19 +74,19 @@ func setUpForNonDevelopment(appStatus string, logger *logrus.Logger) *Config {
 	jwtPrivateKey := jwtSecrets.Data["PRIVATE_KEY"].(string)
 	base64Byte, err := base64.StdEncoding.DecodeString(jwtPrivateKey)
 	if err != nil {
-		logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "base64.StdEncoding.DecodeString"}).Fatal(err)
+		log.Logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "base64.StdEncoding.DecodeString"}).Fatal(err)
 	}
 	jwtPrivateKey = string(base64Byte)
 
 	jwtPublicKey := jwtSecrets.Data["Public_KEY"].(string)
 	base64Byte, err = base64.StdEncoding.DecodeString(jwtPublicKey)
 	if err != nil {
-		logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "base64.StdEncoding.DecodeString"}).Fatal(err)
+		log.Logger.WithFields(logrus.Fields{"location": "config.setUpForNonDevelopment", "section": "base64.StdEncoding.DecodeString"}).Fatal(err)
 	}
 	jwtPublicKey = string(base64Byte)
 
-	jwtConf.PrivateKey = loadRSAPrivateKey(jwtPrivateKey, logger)
-	jwtConf.PublicKey = loadRSAPublicKey(jwtPublicKey, logger)
+	jwtConf.PrivateKey = loadRSAPrivateKey(jwtPrivateKey)
+	jwtConf.PublicKey = loadRSAPublicKey(jwtPublicKey)
 
 	imageKitConf := new(imageKit)
 	imageKitConf.Id = imageKitSecrets.Data["ID"].(string)

@@ -3,13 +3,16 @@ package integration_test
 import (
 	"context"
 	"encoding/base64"
+	"testing"
+	"time"
+
 	pb "github.com/dwprz/prasorganic-proto/protogen/user"
-	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/database"
+	"github.com/dwprz/prasorganic-user-service/src/mock/delivery"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/dwprz/prasorganic-user-service/test/util"
 	"github.com/redis/go-redis/v9"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -17,8 +20,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
-	"testing"
-	"time"
 )
 
 // *nyalakan nginx dan database nya terlebih dahulu
@@ -27,36 +28,36 @@ import (
 
 type FindByEmailTestSuite struct {
 	suite.Suite
-	grpcServer     *grpcapp.Server
-	userGrpcClient pb.UserServiceClient
-	userGrpcConn   *grpc.ClientConn
-	userTestUtil   *util.UserTest
-	postgresDB     *gorm.DB
-	redisDB        *redis.ClusterClient
-	redisTestUtil  *util.RedisTest
-	conf           *config.Config
-	logger         *logrus.Logger
-	user           *entity.User
+	user             *entity.User
+	grpcServer       *server.Grpc
+	userGrpcDelivery pb.UserServiceClient
+	userGrpcConn     *grpc.ClientConn
+	userTestUtil     *util.UserTest
+	postgresDB       *gorm.DB
+	redisDB          *redis.ClusterClient
+	redisTestUtil    *util.RedisTest
 }
 
 func (f *FindByEmailTestSuite) SetupSuite() {
-	grpcServer, postgresDB, redisDB, conf, logger := util.NewGrpcServer()
-	f.grpcServer = grpcServer
-	f.postgresDB = postgresDB
-	f.redisDB = redisDB
-	f.conf = conf
-	f.logger = logger
+	f.postgresDB = database.NewPostgres()
+	f.redisDB = database.NewRedisCluster()
 
-	f.userTestUtil = util.NewUserTest(postgresDB, logger)
-	f.redisTestUtil = util.NewRedisTest(f.redisDB, f.logger)
+	otpGrpcDelivery := delivery.NewOtpGrpcMock()
+	grpcClient := util.InitGrpcClientTest(otpGrpcDelivery)
+
+	userService := util.InitUserServiceTest(grpcClient, f.postgresDB, f.redisDB)
+	f.grpcServer = util.InitGrpcServerTest(userService)
 
 	go f.grpcServer.Run()
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
-	userGrpcClient, userGrpcConn := util.NewGrpcUserClient(f.conf.ApiGateway.BaseUrl)
-	f.userGrpcClient = userGrpcClient
+	userGrpcDelivery, userGrpcConn := util.InitUserGrpcDelivery()
+	f.userGrpcDelivery = userGrpcDelivery
 	f.userGrpcConn = userGrpcConn
+
+	f.userTestUtil = util.NewUserTest(f.postgresDB)
+	f.redisTestUtil = util.NewRedisTest(f.redisDB)
 
 	f.user = f.userTestUtil.Create()
 }
@@ -80,7 +81,7 @@ func (f *FindByEmailTestSuite) Test_Success() {
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	res, err := f.userGrpcClient.FindByEmail(ctx, &pb.Email{Email: f.user.Email})
+	res, err := f.userGrpcDelivery.FindByEmail(ctx, &pb.Email{Email: f.user.Email})
 
 	assert.NoError(f.T(), err)
 	assert.NotNil(f.T(), res.Data)
@@ -96,7 +97,7 @@ func (f *FindByEmailTestSuite) Test_NotFound() {
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	res, err := f.userGrpcClient.FindByEmail(ctx, &pb.Email{Email: "usernotfound@gmail.com"})
+	res, err := f.userGrpcDelivery.FindByEmail(ctx, &pb.Email{Email: "usernotfound@gmail.com"})
 
 	assert.NoError(f.T(), err)
 	assert.Nil(f.T(), res.Data)
@@ -106,7 +107,7 @@ func (f *FindByEmailTestSuite) Test_Unauthenticated() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := f.userGrpcClient.FindByEmail(ctx, &pb.Email{Email: f.user.Email})
+	_, err := f.userGrpcDelivery.FindByEmail(ctx, &pb.Email{Email: f.user.Email})
 
 	st, _ := status.FromError(err)
 	assert.Equal(f.T(), codes.Unauthenticated, st.Code())

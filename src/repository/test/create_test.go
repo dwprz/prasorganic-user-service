@@ -4,18 +4,15 @@ import (
 	"context"
 	"testing"
 
-	chaceinterface "github.com/dwprz/prasorganic-user-service/src/interface/cache"
-	repointerface "github.com/dwprz/prasorganic-user-service/src/interface/repository"
-	"github.com/dwprz/prasorganic-user-service/src/cache"
+	"github.com/dwprz/prasorganic-user-service/src/interface/cache"
+	"github.com/dwprz/prasorganic-user-service/src/interface/repository"
+	cacheimpl "github.com/dwprz/prasorganic-user-service/src/cache"
 	"github.com/dwprz/prasorganic-user-service/src/common/errors"
-	"github.com/dwprz/prasorganic-user-service/src/common/logger"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/database"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
-	"github.com/dwprz/prasorganic-user-service/src/repository"
+	repoimpl"github.com/dwprz/prasorganic-user-service/src/repository"
 	"github.com/dwprz/prasorganic-user-service/test/util"
 	"github.com/redis/go-redis/v9"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/codes"
@@ -27,26 +24,23 @@ import (
 
 type CreateTestSuite struct {
 	suite.Suite
-	userRepo      repointerface.User
+	userRepo      repository.User
 	postgresDB    *gorm.DB
-	userCache     chaceinterface.User
+	userCache     cache.User
 	redisDB       *redis.ClusterClient
-	logger        *logrus.Logger
 	userTestUtil  *util.UserTest
 	redisTestUtil *util.RedisTest
 }
 
 func (c *CreateTestSuite) SetupSuite() {
-	c.logger = logger.New()
-	conf := config.New("DEVELOPMENT", c.logger)
-	c.postgresDB = database.NewPostgres(conf)
-	c.redisDB = database.NewRedisCluster(conf)
+	c.postgresDB = database.NewPostgres()
+	c.redisDB = database.NewRedisCluster()
 
-	c.userCache = cache.NewUser(c.redisDB, c.logger)
+	c.userCache = cacheimpl.NewUser(c.redisDB)
 
-	c.userRepo = repository.NewUser(c.postgresDB, c.userCache)
-	c.userTestUtil = util.NewUserTest(c.postgresDB, c.logger)
-	c.redisTestUtil = util.NewRedisTest(c.redisDB, c.logger)
+	c.userRepo = repoimpl.NewUser(c.postgresDB, c.userCache)
+	c.userTestUtil = util.NewUserTest(c.postgresDB)
+	c.redisTestUtil = util.NewRedisTest(c.redisDB)
 }
 
 func (c *CreateTestSuite) TearDownTest() {

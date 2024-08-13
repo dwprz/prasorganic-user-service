@@ -3,12 +3,16 @@ package integration_test
 import (
 	"context"
 	"encoding/base64"
+	"testing"
+	"time"
+
 	pb "github.com/dwprz/prasorganic-proto/protogen/user"
-	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/database"
+	"github.com/dwprz/prasorganic-user-service/src/mock/delivery"
+	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/dwprz/prasorganic-user-service/test/util"
 	"github.com/redis/go-redis/v9"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -16,8 +20,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
-	"testing"
-	"time"
 )
 
 // *nyalakan nginx dan database nya terlebih dahulu
@@ -26,35 +28,36 @@ import (
 
 type CreateTestSuite struct {
 	suite.Suite
-	grpcServer     *grpcapp.Server
-	userGrpcClient pb.UserServiceClient
-	userGrpcConn   *grpc.ClientConn
-	userTestUtil   *util.UserTest
-	postgresDB     *gorm.DB
-	redisDB        *redis.ClusterClient
-	redisTestUtil  *util.RedisTest
-	conf           *config.Config
-	logger         *logrus.Logger
+	user             *entity.User
+	grpcServer       *server.Grpc
+	userGrpcDelivery pb.UserServiceClient
+	userGrpcConn     *grpc.ClientConn
+	userTestUtil     *util.UserTest
+	postgresDB       *gorm.DB
+	redisDB          *redis.ClusterClient
+	redisTestUtil    *util.RedisTest
 }
 
 func (c *CreateTestSuite) SetupSuite() {
-	grpcServer, postgresDb, redisDB, conf, logger := util.NewGrpcServer()
-	c.grpcServer = grpcServer
-	c.postgresDB = postgresDb
-	c.redisDB = redisDB
-	c.conf = conf
-	c.logger = logger
+	c.postgresDB = database.NewPostgres()
+	c.redisDB = database.NewRedisCluster()
 
-	c.userTestUtil = util.NewUserTest(postgresDb, logger)
-	c.redisTestUtil = util.NewRedisTest(c.redisDB, c.logger)
+	otpGrpcDelivery := delivery.NewOtpGrpcMock()
+	grpcClient := util.InitGrpcClientTest(otpGrpcDelivery)
+
+	userService := util.InitUserServiceTest(grpcClient, c.postgresDB, c.redisDB)
+	c.grpcServer = util.InitGrpcServerTest(userService)
 
 	go c.grpcServer.Run()
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
-	userGrpcClient, userGrpcConn := util.NewGrpcUserClient(c.conf.ApiGateway.BaseUrl)
-	c.userGrpcClient = userGrpcClient
+	userGrpcDelivery, userGrpcConn := util.InitUserGrpcDelivery()
+	c.userGrpcDelivery = userGrpcDelivery
 	c.userGrpcConn = userGrpcConn
+
+	c.userTestUtil = util.NewUserTest(c.postgresDB)
+	c.redisTestUtil = util.NewRedisTest(c.redisDB)
 }
 
 func (c *CreateTestSuite) TearDownSuite() {
@@ -86,7 +89,7 @@ func (c *CreateTestSuite) Test_Success() {
 		Password: "Rahasia",
 	}
 
-	_, err := c.userGrpcClient.Create(ctx, req)
+	_, err := c.userGrpcDelivery.Create(ctx, req)
 	assert.NoError(c.T(), err)
 }
 
@@ -103,7 +106,7 @@ func (c *CreateTestSuite) Test_WithouthUserId() {
 		Password: "Rahasia",
 	}
 
-	_, err := c.userGrpcClient.Create(ctx, req)
+	_, err := c.userGrpcDelivery.Create(ctx, req)
 
 	st, _ := status.FromError(err)
 	assert.Equal(c.T(), codes.InvalidArgument, st.Code())
@@ -123,8 +126,8 @@ func (c *CreateTestSuite) Test_AlreadyExists() {
 		Password: "Rahasia",
 	}
 
-	c.userGrpcClient.Create(ctx, req)
-	_, err := c.userGrpcClient.Create(ctx, req)
+	c.userGrpcDelivery.Create(ctx, req)
+	_, err := c.userGrpcDelivery.Create(ctx, req)
 
 	st, _ := status.FromError(err)
 	assert.Equal(c.T(), codes.AlreadyExists, st.Code())
@@ -141,7 +144,7 @@ func (c *CreateTestSuite) Test_Unauthenticated() {
 		Password: "Rahasia",
 	}
 
-	_, err := c.userGrpcClient.Create(ctx, req)
+	_, err := c.userGrpcDelivery.Create(ctx, req)
 	st, _ := status.FromError(err)
 
 	assert.Equal(c.T(), codes.Unauthenticated, st.Code())

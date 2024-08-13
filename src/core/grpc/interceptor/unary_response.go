@@ -4,7 +4,8 @@ import (
 	"context"
 
 	"github.com/dwprz/prasorganic-user-service/src/common/errors"
-	"github.com/dwprz/prasorganic-user-service/src/interface/helper"
+	"github.com/dwprz/prasorganic-user-service/src/common/helper"
+	"github.com/dwprz/prasorganic-user-service/src/common/log"
 	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -26,31 +27,25 @@ Flow kerja server interceptor:
 
 */
 
-type UnaryResponse struct {
-	logger *logrus.Logger
-	helper helper.Helper
-}
+type UnaryResponse struct{}
 
-func NewUnaryResponse(l *logrus.Logger, h helper.Helper) *UnaryResponse {
-	return &UnaryResponse{
-		logger: l,
-		helper: h,
-	}
+func NewUnaryResponse() *UnaryResponse {
+	return &UnaryResponse{}
 }
 
 func (u *UnaryResponse) Error(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	res, err := handler(ctx, req)
 
 	if err != nil {
-		m := u.helper.GetMetadata(ctx)
+		m := helper.GetMetadata(ctx)
 
-		u.logger.WithFields(logrus.Fields{
+		log.Logger.WithFields(logrus.Fields{
 			"host":     m.Host,
 			"ip":       m.Ip,
 			"protocol": m.Protocol,
 			"location": info.FullMethod,
 			"from":     "Error interceptor",
-		}).Error(err.Error())
+		}).Error(err)
 
 		// validation error handling
 		if errVldtn, ok := err.(validator.ValidationErrors); ok {
@@ -81,9 +76,9 @@ func (u *UnaryResponse) Error(ctx context.Context, req any, info *grpc.UnaryServ
 func (u *UnaryResponse) Recovery(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			m := u.helper.GetMetadata(ctx)
+			m := helper.GetMetadata(ctx)
 
-			u.logger.WithFields(logrus.Fields{
+			log.Logger.WithFields(logrus.Fields{
 				"host":     m.Host,
 				"ip":       m.Ip,
 				"protocol": m.Protocol,

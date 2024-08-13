@@ -35,9 +35,9 @@ type UpdateEmailReq struct {
 }
 
 type UpdatePhotoProfileReq struct {
-	Email             string `json:"email" validate:"required,email,min=5,max=100"`
-	NewPhotoProfileId string `json:"new_photo_profile_id" validate:"required,min=10,max=100"`
-	NewPhotoProfile   string `json:"new_photo_profile" validate:"required,min=10,max=500"`
+	Email          string `json:"email" validate:"required,email,min=5,max=100"`
+	PhotoProfileId string `json:"new_photo_profile_id" validate:"required,min=10,max=100"`
+	PhotoProfile   string `json:"new_photo_profile" validate:"required,min=10,max=500"`
 }
 
 type VerifyUpdateEmailReq struct {

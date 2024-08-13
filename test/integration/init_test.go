@@ -1,23 +1,17 @@
 package integration_test
 
 import (
-	"log"
 	"os"
-	"path"
+
+	"github.com/dwprz/prasorganic-user-service/src/common/log"
+	"github.com/sirupsen/logrus"
 )
 
 // ini untuk merubah working directory path saat menjalankan test supaya path nya berawal dari root
 
 func init() {
-	filename, err := os.Getwd()
+	err := os.Chdir(os.Getenv("PRASORGANIC_USER_SERVICE_WORKSPACE"))
 	if err != nil {
-		log.Fatalf("failed to get current directory: %v", err)
-	}
-
-	dir := path.Join(filename, "../../")
-
-	err = os.Chdir(dir)
-	if err != nil {
-		log.Fatalf("failed to change current working directory: %v", err)
+		log.Logger.WithFields(logrus.Fields{"location": "integration_test.init", "section": "os.Chdir"}).Fatal(err)
 	}
 }

@@ -1,37 +1,36 @@
 package handler
 
 import (
-	"context"
 	"encoding/base64"
 	"time"
 
-	"github.com/dwprz/prasorganic-user-service/src/interface/helper"
+	"github.com/dwprz/prasorganic-user-service/src/common/helper"
+	"github.com/dwprz/prasorganic-user-service/src/core/restful/client"
 	"github.com/dwprz/prasorganic-user-service/src/interface/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/imagekit-developer/imagekit-go/api/uploader"
 	"github.com/jinzhu/copier"
 )
 
-type UserRestful struct {
-	userService service.User
-	helper      helper.Helper
+type User struct {
+	userService   service.User
+	restfulClient *client.Restful
 }
 
-func NewUserRestful(us service.User, h helper.Helper) *UserRestful {
-	return &UserRestful{
-		userService: us,
-		helper:      h,
+func NewUser(us service.User, rc *client.Restful) *User {
+	return &User{
+		userService:   us,
+		restfulClient: rc,
 	}
 }
 
-func (u *UserRestful) GetCurrent(c *fiber.Ctx) error {
-	defer u.helper.HandlePanic(c)
-
+func (u *User) GetCurrent(c *fiber.Ctx) error {
 	userData := c.Locals("user_data").(jwt.MapClaims)
 	email := userData["email"].(string)
 
-	res, err := u.userService.FindByEmail(context.Background(), email)
+	res, err := u.userService.FindByEmail(c.Context(), email)
 	if err != nil {
 		return err
 	}
@@ -42,9 +41,7 @@ func (u *UserRestful) GetCurrent(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{"data": user})
 }
 
-func (u *UserRestful) UpdateProfile(c *fiber.Ctx) error {
-	defer u.helper.HandlePanic(c)
-
+func (u *User) UpdateProfile(c *fiber.Ctx) error {
 	userData := c.Locals("user_data").(jwt.MapClaims)
 	email := userData["email"].(string)
 
@@ -55,21 +52,21 @@ func (u *UserRestful) UpdateProfile(c *fiber.Ctx) error {
 
 	req.Email = email
 
-	res, err := u.userService.UpdateProfile(context.Background(), req)
+	res, err := u.userService.UpdateProfile(c.Context(), req)
 
 	if err != nil {
 		return err
 	}
 
 	user := new(dto.SanitizedUserRes)
-	copier.Copy(user, res)
+	if err := copier.Copy(user, res); err != nil {
+		return err
+	}
 
 	return c.Status(200).JSON(fiber.Map{"data": user})
 }
 
-func (u *UserRestful) UpdatePassword(c *fiber.Ctx) error {
-	defer u.helper.HandlePanic(c)
-
+func (u *User) UpdatePassword(c *fiber.Ctx) error {
 	userData := c.Locals("user_data").(jwt.MapClaims)
 	email := userData["email"].(string)
 
@@ -79,7 +76,7 @@ func (u *UserRestful) UpdatePassword(c *fiber.Ctx) error {
 	}
 
 	req.Email = email
-	err := u.userService.UpdatePassword(context.Background(), req)
+	err := u.userService.UpdatePassword(c.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -87,9 +84,7 @@ func (u *UserRestful) UpdatePassword(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{"data": "successfully updated the password"})
 }
 
-func (u *UserRestful) UpdateEmail(c *fiber.Ctx) error {
-	defer u.helper.HandlePanic(c)
-
+func (u *User) UpdateEmail(c *fiber.Ctx) error {
 	userData := c.Locals("user_data").(jwt.MapClaims)
 	email := userData["email"].(string)
 
@@ -99,7 +94,7 @@ func (u *UserRestful) UpdateEmail(c *fiber.Ctx) error {
 	}
 
 	req.Email = email
-	res, err := u.userService.UpdateEmail(context.Background(), req)
+	res, err := u.userService.UpdateEmail(c.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -115,9 +110,7 @@ func (u *UserRestful) UpdateEmail(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{"data": "Successfully requested email update"})
 }
 
-func (u *UserRestful) VerifyUpdateEmail(c *fiber.Ctx) error {
-	defer u.helper.HandlePanic(c)
-
+func (u *User) VerifyUpdateEmail(c *fiber.Ctx) error {
 	userData := c.Locals("user_data").(jwt.MapClaims)
 	email := userData["email"].(string)
 
@@ -134,7 +127,7 @@ func (u *UserRestful) VerifyUpdateEmail(c *fiber.Ctx) error {
 	req.NewEmail = string(newEmail)
 	req.Email = email
 
-	res, err := u.userService.VerifyUpdateEmail(context.Background(), req)
+	res, err := u.userService.VerifyUpdateEmail(c.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -147,27 +140,36 @@ func (u *UserRestful) VerifyUpdateEmail(c *fiber.Ctx) error {
 		Expires:  time.Now().Add(1 * time.Hour),
 	})
 
-	c.Cookie(u.helper.ClearCookie("update_email", "/api/users/current/email/verify")) // clear cookie
+	c.Cookie(helper.ClearCookie("update_email", "/api/users/current/email/verify")) // clear cookie
 
 	return c.Status(200).JSON(fiber.Map{"data": res.Data})
 }
 
-func (u *UserRestful) UpdatePhotoProfile(c *fiber.Ctx) error {
-	defer u.helper.HandlePanic(c)
-
+func (u *User) UpdatePhotoProfile(c *fiber.Ctx) error {
 	userData := c.Locals("user_data").(jwt.MapClaims)
 	email := userData["email"].(string)
 
-	req := c.Locals("update_photo_profile_req").(dto.UpdatePhotoProfileReq)
+	req := new(dto.UpdatePhotoProfileReq)
+
+	uploadRes := c.Locals("upload_imagekit_result").(*uploader.UploadResult)
+	req.PhotoProfileId = uploadRes.FileId
+	req.PhotoProfile = uploadRes.Url
 	req.Email = email
 
-	res, err := u.userService.UpdatePhotoProfile(context.Background(), &req)
+	res, err := u.userService.UpdatePhotoProfile(c.Context(), req)
 	if err != nil {
 		return err
 	}
 
 	user := new(dto.SanitizedUserRes)
-	copier.Copy(user, res)
+	if err := copier.Copy(user, res); err != nil {
+		return err
+	}
+
+	photoProfileId := c.FormValue("photo_profile_id")
+	if photoProfileId != "" {
+		go u.restfulClient.ImageKit.DeleteFile(c.Context(), photoProfileId)
+	}
 
 	return c.Status(200).JSON(fiber.Map{"data": user})
 }

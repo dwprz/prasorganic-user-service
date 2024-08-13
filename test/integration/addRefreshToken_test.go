@@ -5,13 +5,14 @@ import (
 	"encoding/base64"
 	"testing"
 	"time"
+
 	pb "github.com/dwprz/prasorganic-proto/protogen/user"
-	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/database"
+	"github.com/dwprz/prasorganic-user-service/src/mock/delivery"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/dwprz/prasorganic-user-service/test/util"
 	"github.com/redis/go-redis/v9"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -27,53 +28,53 @@ import (
 
 type AddRefreshTokenTestSuite struct {
 	suite.Suite
-	user           *entity.User
-	grpcServer     *grpcapp.Server
-	userGrpcClient pb.UserServiceClient
-	userGrpcConn   *grpc.ClientConn
-	userTestUtil   *util.UserTest
-	postgresDB     *gorm.DB
-	redisDB        *redis.ClusterClient
-	redisTestUtil  *util.RedisTest
-	conf           *config.Config
-	logger         *logrus.Logger
+	user             *entity.User
+	grpcServer       *server.Grpc
+	userGrpcDelivery pb.UserServiceClient
+	userGrpcConn     *grpc.ClientConn
+	userTestUtil     *util.UserTest
+	postgresDB       *gorm.DB
+	redisDB          *redis.ClusterClient
+	redisTestUtil    *util.RedisTest
 }
 
-func (u *AddRefreshTokenTestSuite) SetupSuite() {
-	grpcServer, postgresDb, redisDB, conf, logger := util.NewGrpcServer()
-	u.grpcServer = grpcServer
-	u.postgresDB = postgresDb
-	u.redisDB = redisDB
-	u.conf = conf
-	u.logger = logger
+func (a *AddRefreshTokenTestSuite) SetupSuite() {
+	a.postgresDB = database.NewPostgres()
+	a.redisDB = database.NewRedisCluster()
 
-	u.userTestUtil = util.NewUserTest(postgresDb, logger)
-	u.redisTestUtil = util.NewRedisTest(u.redisDB, u.logger)
+	otpGrpcDelivery := delivery.NewOtpGrpcMock()
+	grpcClient := util.InitGrpcClientTest(otpGrpcDelivery)
 
-	go u.grpcServer.Run()
+	userService := util.InitUserServiceTest(grpcClient, a.postgresDB, a.redisDB)
+	a.grpcServer = util.InitGrpcServerTest(userService)
 
-	time.Sleep(2 * time.Second)
+	go a.grpcServer.Run()
 
-	userGrpcClient, userGrpcConn := util.NewGrpcUserClient(u.conf.ApiGateway.BaseUrl)
-	u.userGrpcClient = userGrpcClient
-	u.userGrpcConn = userGrpcConn
+	time.Sleep(1 * time.Second)
 
-	u.user = u.userTestUtil.Create()
+	userGrpcDelivery, userGrpcConn := util.InitUserGrpcDelivery()
+	a.userGrpcDelivery = userGrpcDelivery
+	a.userGrpcConn = userGrpcConn
+
+	a.userTestUtil = util.NewUserTest(a.postgresDB)
+	a.redisTestUtil = util.NewRedisTest(a.redisDB)
+
+	a.user = a.userTestUtil.Create()
 }
 
-func (u *AddRefreshTokenTestSuite) TearDownSuite() {
-	u.userTestUtil.Delete()
-	sqlDB, _ := u.postgresDB.DB()
+func (a *AddRefreshTokenTestSuite) TearDownSuite() {
+	a.userTestUtil.Delete()
+	sqlDB, _ := a.postgresDB.DB()
 	sqlDB.Close()
 
-	u.redisTestUtil.Flushall()
-	u.redisDB.Close()
+	a.redisTestUtil.Flushall()
+	a.redisDB.Close()
 
-	u.grpcServer.Stop()
-	u.userGrpcConn.Close()
+	a.grpcServer.Stop()
+	a.userGrpcConn.Close()
 }
 
-func (u *AddRefreshTokenTestSuite) Test_Success() {
+func (a *AddRefreshTokenTestSuite) Test_Success() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -81,26 +82,26 @@ func (u *AddRefreshTokenTestSuite) Test_Success() {
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
 	req := &pb.AddRefreshToken{
-		Email: u.user.Email,
-		Token: u.user.RefreshToken,
+		Email: a.user.Email,
+		Token: a.user.RefreshToken,
 	}
 
-	_, err := u.userGrpcClient.AddRefreshToken(ctx, req)
-	assert.NoError(u.T(), err)
+	_, err := a.userGrpcDelivery.AddRefreshToken(ctx, req)
+	assert.NoError(a.T(), err)
 }
 
-func (u *AddRefreshTokenTestSuite) Test_Unauthenticated() {
+func (a *AddRefreshTokenTestSuite) Test_Unauthenticated() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	req := &pb.AddRefreshToken{
-		Email: u.user.Email,
-		Token: u.user.RefreshToken,
+		Email: a.user.Email,
+		Token: a.user.RefreshToken,
 	}
 
-	_, err := u.userGrpcClient.AddRefreshToken(ctx, req)
+	_, err := a.userGrpcDelivery.AddRefreshToken(ctx, req)
 	st, _ := status.FromError(err)
-	assert.Equal(u.T(), codes.Unauthenticated, st.Code())
+	assert.Equal(a.T(), codes.Unauthenticated, st.Code())
 }
 
 func TestIntegration_AddRefreshToken(t *testing.T) {

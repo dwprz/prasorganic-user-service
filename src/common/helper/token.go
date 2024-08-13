@@ -2,10 +2,12 @@ package helper
 
 import (
 	"time"
+
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func (h *HelperImpl) GenerateAccessToken(userId string, email string, role string) (string, error) {
+func GenerateAccessToken(userId string, email string, role string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"iss":     "prasorganic-auth-service",
 		"user_id": userId,
@@ -14,7 +16,7 @@ func (h *HelperImpl) GenerateAccessToken(userId string, email string, role strin
 		"exp":     time.Now().Add(1 * time.Hour).Unix(),
 	})
 
-	accessToken, err := token.SignedString(h.conf.Jwt.PrivateKey)
+	accessToken, err := token.SignedString(config.Conf.Jwt.PrivateKey)
 	if err != nil {
 		return "", err
 	}

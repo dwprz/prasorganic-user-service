@@ -1,4 +1,4 @@
-package client
+package delivery
 
 import (
 	"context"

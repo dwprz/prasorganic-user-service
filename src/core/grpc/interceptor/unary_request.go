@@ -8,14 +8,10 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type UnaryRequest struct {
-	conf *config.Config
-}
+type UnaryRequest struct {}
 
-func NewUnaryRequest(conf *config.Config) *UnaryRequest {
-	return &UnaryRequest{
-		conf: conf,
-	}
+func NewUnaryRequest() *UnaryRequest {
+	return &UnaryRequest{}
 }
 
 func (u *UnaryRequest) AddBasicAuth(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
@@ -24,7 +20,7 @@ func (u *UnaryRequest) AddBasicAuth(ctx context.Context, method string, req, rep
 		md = metadata.New(nil)
 	}
 
-	auth := base64.StdEncoding.EncodeToString([]byte(u.conf.ApiGateway.BasicAuth))
+	auth := base64.StdEncoding.EncodeToString([]byte(config.Conf.ApiGateway.BasicAuth))
 	md.Append("Authorization", "Basic "+auth)
 
 	authCtx := metadata.NewOutgoingContext(ctx, md)

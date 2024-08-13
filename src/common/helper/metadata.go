@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func (h *HelperImpl) GetMetadata(ctx context.Context) *entity.Metadata {
+func GetMetadata(ctx context.Context) *entity.Metadata {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return new(entity.Metadata)

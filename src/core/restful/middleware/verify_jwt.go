@@ -2,7 +2,9 @@ package middleware
 
 import (
 	"fmt"
+
 	"github.com/dwprz/prasorganic-user-service/src/common/errors"
+	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -19,7 +21,7 @@ func (m *Middleware) VerifyJwt(c *fiber.Ctx) error {
 			return nil, fmt.Errorf("unexpected token method: %v", t.Header["alg"])
 		}
 
-		return m.conf.Jwt.PublicKey, nil
+		return config.Conf.Jwt.PublicKey, nil
 	})
 
 	if err != nil {

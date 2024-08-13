@@ -7,17 +7,17 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func NewRedisCluster(conf *config.Config) *redis.ClusterClient {
+func NewRedisCluster() *redis.ClusterClient {
 	client := redis.NewClusterClient(&redis.ClusterOptions{
 		Addrs: []string{
-			conf.Redis.AddrNode1,
-			conf.Redis.AddrNode2,
-			conf.Redis.AddrNode3,
-			conf.Redis.AddrNode4,
-			conf.Redis.AddrNode5,
-			conf.Redis.AddrNode6,
+			config.Conf.Redis.AddrNode1,
+			config.Conf.Redis.AddrNode2,
+			config.Conf.Redis.AddrNode3,
+			config.Conf.Redis.AddrNode4,
+			config.Conf.Redis.AddrNode5,
+			config.Conf.Redis.AddrNode6,
 		},
-		Password:     conf.Redis.Password,
+		Password:     config.Conf.Redis.Password,
 		DialTimeout:  20 * time.Second,
 		ReadTimeout:  20 * time.Second,
 		WriteTimeout: 20 * time.Second,

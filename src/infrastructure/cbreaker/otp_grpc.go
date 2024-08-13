@@ -1,16 +1,19 @@
 package cbreaker
 
 import (
-	"github.com/sirupsen/logrus"
+	"time"
+
+	"github.com/dwprz/prasorganic-user-service/src/common/log"
 	"github.com/sony/gobreaker/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"time"
 )
 
-func setupForOtpGrpc(logger *logrus.Logger) *gobreaker.CircuitBreaker[any] {
+var OtpGrpc *gobreaker.CircuitBreaker[any]
+
+func init() {
 	settings := gobreaker.Settings{
-		Name:        "otp-grpc-client-circuit-breaker",
+		Name:        "otp-grpc-client",
 		MaxRequests: 3,
 		Interval:    1 * time.Minute,
 		Timeout:     15 * time.Second,
@@ -45,10 +48,9 @@ func setupForOtpGrpc(logger *logrus.Logger) *gobreaker.CircuitBreaker[any] {
 			return false
 		},
 		OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) {
-			logger.Infof("circuit breake %v from status %v to %v", name, from, to)
+			log.Logger.Infof("circuit breaker %v from status %v to %v", name, from, to)
 		},
 	}
 
-	cbreaker := gobreaker.NewCircuitBreaker[any](settings)
-	return cbreaker
+	OtpGrpc = gobreaker.NewCircuitBreaker[any](settings)
 }

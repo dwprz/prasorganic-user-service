@@ -1,6 +1,7 @@
 package util
 
 import (
+	"github.com/dwprz/prasorganic-user-service/src/common/log"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -8,13 +9,11 @@ import (
 
 type UserTest struct {
 	db     *gorm.DB
-	logger *logrus.Logger
 }
 
-func NewUserTest(db *gorm.DB, l *logrus.Logger) *UserTest {
+func NewUserTest(db *gorm.DB) *UserTest {
 	return &UserTest{
 		db:     db,
-		logger: l,
 	}
 }
 
@@ -29,7 +28,7 @@ func (u *UserTest) Create() *entity.User {
 	user := new(entity.User)
 
 	if err := u.db.Raw(query).Scan(user).Error; err != nil {
-		u.logger.WithFields(logrus.Fields{
+		log.Logger.WithFields(logrus.Fields{
 			"location": "util.UserTest/Create",
 			"section":  "gorm.DB.Raw",
 		}).Errorf(err.Error())
@@ -40,7 +39,7 @@ func (u *UserTest) Create() *entity.User {
 
 func (u *UserTest) Delete() {
 	if err := u.db.Exec("DELETE FROM users;").Error; err != nil {
-		u.logger.WithFields(logrus.Fields{
+		log.Logger.WithFields(logrus.Fields{
 			"location": "util.UserTest/Delete",
 			"section":  "orm.DB.Exec",
 		}).Errorf(err.Error())

@@ -1,4 +1,4 @@
-package restful
+package server
 
 import (
 	"net/http"
@@ -10,17 +10,17 @@ import (
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	 "github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 // this main restful server
-type Server struct {
+type Restful struct {
 	app                *fiber.App
-	userRestfulHandler *handler.UserRestful
+	userRestfulHandler *handler.User
 	middleware         *middleware.Middleware
-	conf               *config.Config
 }
 
-func NewServer(urh *handler.UserRestful, m *middleware.Middleware, conf *config.Config) *Server {
+func NewRestful(urh *handler.User, m *middleware.Middleware) *Restful {
 	app := fiber.New(fiber.Config{
 		CaseSensitive: true,
 		StrictRouting: true,
@@ -29,6 +29,8 @@ func NewServer(urh *handler.UserRestful, m *middleware.Middleware, conf *config.
 		WriteTimeout:  20 * time.Second,
 		ErrorHandler:  m.Error,
 	})
+
+	app.Use(recover.New())
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "http://restful.local:80",
@@ -39,24 +41,23 @@ func NewServer(urh *handler.UserRestful, m *middleware.Middleware, conf *config.
 
 	router.Create(app, urh, m)
 
-	return &Server{
+	return &Restful{
 		app:                app,
 		userRestfulHandler: urh,
 		middleware:         m,
-		conf:               conf,
 	}
 }
 
-func (r *Server) Run() {
-	r.app.Listen(r.conf.CurrentApp.RestfulAddress)
+func (r *Restful) Run() {
+	r.app.Listen(config.Conf.CurrentApp.RestfulAddress)
 }
 
-func (r *Server) Test(req *http.Request) (*http.Response, error) {
+func (r *Restful) Test(req *http.Request) (*http.Response, error) {
 	res, err := r.app.Test(req)
 
 	return res, err
 }
 
-func (r *Server) Stop() {
+func (r *Restful) Stop() {
 	r.app.Shutdown()
 }

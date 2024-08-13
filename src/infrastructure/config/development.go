@@ -1,19 +1,26 @@
 package config
 
 import (
+	"os"
+
+	"github.com/dwprz/prasorganic-user-service/src/common/log"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
-func setUpForDevelopment(logger *logrus.Logger) *Config {
-	viper := viper.New()
+func setUpForDevelopment() *Config {
+	err := os.Chdir(os.Getenv("PRASORGANIC_USER_SERVICE_WORKSPACE"))
+	if err != nil {
+		log.Logger.WithFields(logrus.Fields{"location": "config.setUpForDevelopment", "section": "os.Chdir"}).Fatal(err)
+	}
 
+	viper := viper.New()
 	viper.SetConfigFile(".env")
 	viper.AddConfigPath(".")
 
-	err := viper.ReadInConfig()
+	err = viper.ReadInConfig()
 	if err != nil {
-		logger.WithFields(logrus.Fields{"location": "config.setUpForDevelopment", "section": "viper.ReadInConfig"}).Fatal(err)
+		log.Logger.WithFields(logrus.Fields{"location": "config.setUpForDevelopment", "section": "viper.ReadInConfig"}).Fatal(err)
 	}
 
 	currentAppConf := new(currentApp)
@@ -42,8 +49,8 @@ func setUpForDevelopment(logger *logrus.Logger) *Config {
 	apiGatewayConf.BasicAuthPassword = viper.GetString("API_GATEWAY_BASIC_AUTH_PASSWORD")
 
 	jwtConf := new(jwt)
-	jwtConf.PrivateKey = loadRSAPrivateKey(viper.GetString("JWT_PRIVATE_KEY"), logger)
-	jwtConf.PublicKey = loadRSAPublicKey(viper.GetString("JWT_PUBLIC_KEY"), logger)
+	jwtConf.PrivateKey = loadRSAPrivateKey(viper.GetString("JWT_PRIVATE_KEY"))
+	jwtConf.PublicKey = loadRSAPublicKey(viper.GetString("JWT_PUBLIC_KEY"))
 
 	imageKitConf := new(imageKit)
 	imageKitConf.Id = viper.GetString("IMAGEKIT_ID")

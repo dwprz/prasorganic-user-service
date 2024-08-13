@@ -2,61 +2,43 @@ package test
 
 import (
 	"context"
+	"encoding/base64"
 	"testing"
 	"time"
 
 	pb "github.com/dwprz/prasorganic-proto/protogen/user"
-	"github.com/dwprz/prasorganic-user-service/src/common/helper"
-	"github.com/dwprz/prasorganic-user-service/src/common/logger"
-	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
-	"github.com/dwprz/prasorganic-user-service/src/core/grpc/interceptor"
 	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/imagekit"
 	"github.com/dwprz/prasorganic-user-service/src/mock/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
 	"github.com/dwprz/prasorganic-user-service/test/util"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
-// go test -v ./src/core/grpc/server/test/... -count=1 -p=1
-// go test -run ^TestServer_FindUserByEmail$ -v ./src/core/grpc/server/test -count=1
+// go test -v ./src/core/grpc/handler/test/... -count=1 -p=1
+// go test -run ^TestServer_FindUserByEmail$ -v ./src/core/grpc/handler/test -count=1
 
 type FindUserByEmailTestSuite struct {
 	suite.Suite
-	grpcServer     *grpcapp.Server
-	userGrpcClient pb.UserServiceClient
-	userGrpcConn   *grpc.ClientConn
-	userService    *service.UserMock
-	logger         *logrus.Logger
+	grpcServer       *server.Grpc
+	userGrpcDelivery pb.UserServiceClient
+	userGrpcConn     *grpc.ClientConn
+	userService      *service.UserMock
 }
 
 func (f *FindUserByEmailTestSuite) SetupSuite() {
-	f.logger = logger.New()
-	conf := config.New("DEVELOPMENT", f.logger)
-	imageKit := imagekit.New(conf)
-	helper := helper.New(imageKit, conf, f.logger)
-
-	// mock
 	f.userService = service.NewUserMock()
-
-	userGrpcServer := server.NewUserGrpc(f.logger, f.userService)
-	unaryResponseInterceptor := interceptor.NewUnaryResponse(f.logger, helper)
-
-	f.grpcServer = grpcapp.NewServer(conf.CurrentApp.GrpcPort, userGrpcServer, unaryResponseInterceptor, f.logger)
+	f.grpcServer = util.InitGrpcServerTest(f.userService)
 
 	go f.grpcServer.Run()
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
-	grpcAddress := "localhost:" + conf.CurrentApp.GrpcPort
-	userGrpcClient, userGrpcConn := util.NewGrpcUserClient(grpcAddress)
-
-	f.userGrpcClient = userGrpcClient
+	userGrpcDelivery, userGrpcConn := util.InitUserGrpcDelivery()
+	f.userGrpcDelivery = userGrpcDelivery
 	f.userGrpcConn = userGrpcConn
 }
 
@@ -76,7 +58,10 @@ func (f *FindUserByEmailTestSuite) Test_Success() {
 
 	f.userService.Mock.On("FindByEmail", mock.Anything, request.Email).Return(user, nil)
 
-	res, err := f.userGrpcClient.FindByEmail(context.Background(), request)
+	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
+	ctx := metadata.AppendToOutgoingContext(context.Background(), "authorization", "Basic "+auth)
+
+	res, err := f.userGrpcDelivery.FindByEmail(ctx, request)
 	assert.NoError(f.T(), err)
 	assert.NotNil(f.T(), res.Data)
 }
@@ -86,7 +71,10 @@ func (f *FindUserByEmailTestSuite) Test_NotFound() {
 
 	f.userService.Mock.On("FindByEmail", mock.Anything, request.Email).Return(nil, nil)
 
-	res, err := f.userGrpcClient.FindByEmail(context.Background(), request)
+	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
+	ctx := metadata.AppendToOutgoingContext(context.Background(), "authorization", "Basic "+auth)
+
+	res, err := f.userGrpcDelivery.FindByEmail(ctx, request)
 	assert.NoError(f.T(), err)
 	assert.Nil(f.T(), res.Data)
 }

@@ -9,22 +9,11 @@ import (
 	"syscall"
 
 	"github.com/dwprz/prasorganic-user-service/src/cache"
-	"github.com/dwprz/prasorganic-user-service/src/common/helper"
-	"github.com/dwprz/prasorganic-user-service/src/common/logger"
-	"github.com/dwprz/prasorganic-user-service/src/core/grpc/client"
-	"github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
-	"github.com/dwprz/prasorganic-user-service/src/core/grpc/interceptor"
-	"github.com/dwprz/prasorganic-user-service/src/core/grpc/server"
-	"github.com/dwprz/prasorganic-user-service/src/core/restful/handler"
-	"github.com/dwprz/prasorganic-user-service/src/core/restful/middleware"
-	"github.com/dwprz/prasorganic-user-service/src/core/restful/restful"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/cbreaker"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
+	"github.com/dwprz/prasorganic-user-service/src/core/grpc"
+	"github.com/dwprz/prasorganic-user-service/src/core/restful"
 	"github.com/dwprz/prasorganic-user-service/src/infrastructure/database"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/imagekit"
 	"github.com/dwprz/prasorganic-user-service/src/repository"
 	"github.com/dwprz/prasorganic-user-service/src/service"
-	"github.com/go-playground/validator/v10"
 )
 
 func init() {
@@ -47,37 +36,24 @@ func main() {
 	closeCH := make(chan struct{})
 	handleCloseApp(closeCH)
 
-	appStatus := os.Getenv("PRASORGANIC_APP_STATUS")
+	postgresDb := database.NewPostgres()
+	redisDb := database.NewRedisCluster()
 
-	logger := logger.New()
-	conf := config.New(appStatus, logger)
-	postgresDb := database.NewPostgres(conf)
-	redisDb := database.NewRedisCluster(conf)
-	imageKit := imagekit.New(conf)
-	helper := helper.New(imageKit, conf, logger)
-	validator := validator.New()
+	userCache := cache.NewUser(redisDb)
+	userRepository := repository.NewUser(postgresDb, userCache)
 
-	cbreaker := cbreaker.New(logger)
-	unaryRequestInterceptor := interceptor.NewUnaryRequest(conf)
-	otpGrpcClient, otpGrpcConn := client.NewOtpGrpc(cbreaker.OtpGrpc, conf, unaryRequestInterceptor)
-	grpcClient := grpc.NewClient(otpGrpcClient, otpGrpcConn, logger)
+	grpcClient := grpc.InitClient()
 	defer grpcClient.Close()
 
-	userCache := cache.NewUser(redisDb, logger)
-	userRepository := repository.NewUser(postgresDb, userCache)
-	userService := service.NewUser(grpcClient, validator, userRepository, userCache, helper)
-	unaryResInterceptor := interceptor.NewUnaryResponse(logger, helper)
-	userGrpcServer := server.NewUserGrpc(logger, userService)
+	userService := service.NewUser(grpcClient, userRepository, userCache)
 
-	grpcServer := grpc.NewServer(conf.CurrentApp.GrpcPort, userGrpcServer, unaryResInterceptor, logger)
+	grpcServer := grpc.InitServer(userService)
 	defer grpcServer.Stop()
 
 	go grpcServer.Run()
 
-	userRestfulHandler := handler.NewUserRestful(userService, helper)
-	middleware := middleware.New(imageKit, conf, helper, logger)
-
-	restfulServer := restful.NewServer(userRestfulHandler, middleware, conf)
+	restfulClient := restful.InitClient()
+	restfulServer := restful.InitServer(restfulClient, userService)
 	defer restfulServer.Stop()
 
 	go restfulServer.Run()

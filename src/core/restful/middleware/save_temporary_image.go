@@ -1,10 +1,7 @@
 package middleware
 
 import (
-	"fmt"
-	"regexp"
-	"time"
-
+	"github.com/dwprz/prasorganic-user-service/src/common/helper"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,13 +16,14 @@ func (m *Middleware) SaveTemporaryImage(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"errors": "file size is too large"})
 	}
 
-	re := regexp.MustCompile(`[ %?#&=]`)
-	encodedName := re.ReplaceAllString(file.Filename, "-")
-	epochMillis := time.Now().UnixMilli()
+	filename := helper.CreateUnixFileName(file.Filename)
+	path := "./tmp/" + filename
 
-	filename := fmt.Sprintf("%d-%s", epochMillis, encodedName)
+	if err := helper.CheckExistDir("./tmp"); err != nil {
+		return err
+	}
 
-	c.SaveFile(file, "./tmp/"+filename)
+	c.SaveFile(file, path)
 
 	c.Locals("filename", filename)
 	return c.Next()

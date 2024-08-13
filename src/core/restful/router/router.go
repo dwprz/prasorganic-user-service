@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func Create(app *fiber.App, h *handler.UserRestful, m *middleware.Middleware) {
+func Create(app *fiber.App, h *handler.User, m *middleware.Middleware) {
 	app.Add("GET", "/api/users/current", m.VerifyJwt, h.GetCurrent)
 	app.Add("PATCH", "/api/users/current", m.VerifyJwt, h.UpdateProfile)
 	app.Add("PATCH", "/api/users/current/password", m.VerifyJwt, h.UpdatePassword)

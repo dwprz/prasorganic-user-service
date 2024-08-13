@@ -4,20 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dwprz/prasorganic-user-service/src/common/helper"
-	"github.com/dwprz/prasorganic-user-service/src/common/logger"
-	grpcapp "github.com/dwprz/prasorganic-user-service/src/core/grpc/grpc"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/config"
-	"github.com/dwprz/prasorganic-user-service/src/infrastructure/imagekit"
-	svcinterface "github.com/dwprz/prasorganic-user-service/src/interface/service"
+	"github.com/dwprz/prasorganic-user-service/src/core/grpc/client"
+	"github.com/dwprz/prasorganic-user-service/src/interface/service"
 	"github.com/dwprz/prasorganic-user-service/src/mock/cache"
-	"github.com/dwprz/prasorganic-user-service/src/mock/client"
+	"github.com/dwprz/prasorganic-user-service/src/mock/delivery"
 	"github.com/dwprz/prasorganic-user-service/src/mock/repository"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/dwprz/prasorganic-user-service/src/model/entity"
-	"github.com/dwprz/prasorganic-user-service/src/service"
-	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
+	serviceimpl "github.com/dwprz/prasorganic-user-service/src/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -29,26 +23,20 @@ import (
 
 type UpsertTestSuite struct {
 	suite.Suite
-	userService svcinterface.User
+	userService service.User
 	userRepo    *repository.UserMock
-	logger      *logrus.Logger
+	userCache   *cache.UserMock
 }
 
 func (u *UpsertTestSuite) SetupSuite() {
-	u.logger = logger.New()
-	conf := config.New("DEVELOPMENT", u.logger)
-	validator := validator.New()
-
 	// mock
 	u.userRepo = repository.NewUserMock()
-	userCache := cache.NewUserMock()
-	otpGrpcClient := client.NewOtpGrpcMock()
+	u.userCache = cache.NewUserMock()
+	otpGrpcDelivery := delivery.NewOtpGrpcMock()
 	otpGrpcConn := new(grpc.ClientConn)
 
-	grpcClient := grpcapp.NewClient(otpGrpcClient, otpGrpcConn, u.logger)
-	imageKit := imagekit.New(conf)
-	helper := helper.New(imageKit, conf, u.logger)
-	u.userService = service.NewUser(grpcClient, validator, u.userRepo, userCache, helper)
+	grpcClient := client.NewGrpc(otpGrpcDelivery, otpGrpcConn)
+	u.userService = serviceimpl.NewUser(grpcClient, u.userRepo, u.userCache)
 }
 
 func (u *UpsertTestSuite) Test_Succsess() {

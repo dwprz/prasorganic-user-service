@@ -1,4 +1,4 @@
-package client
+package delivery
 
 import (
 	"context"
@@ -7,23 +7,23 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type OtpGrpc struct {
+type OtpGrpcMock struct {
 	mock.Mock
 }
 
-func NewOtpGrpcMock() *OtpGrpc {
-	return &OtpGrpc{
+func NewOtpGrpcMock() *OtpGrpcMock {
+	return &OtpGrpcMock{
 		Mock: mock.Mock{},
 	}
 }
 
-func (o *OtpGrpc) Send(ctx context.Context, email string) error {
+func (o *OtpGrpcMock) Send(ctx context.Context, email string) error {
 	arguments := o.Mock.Called(ctx, email)
 
 	return arguments.Error(0)
 }
 
-func (o *OtpGrpc) Verify(ctx context.Context, data *pb.VerifyRequest) (*pb.VerifyResponse, error) {
+func (o *OtpGrpcMock) Verify(ctx context.Context, data *pb.VerifyRequest) (*pb.VerifyResponse, error) {
 	arguments := o.Mock.Called(ctx, data)
 
 	if arguments.Get(0) == nil {

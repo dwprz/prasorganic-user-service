@@ -1,4 +1,4 @@
-package server
+package handler
 
 import (
 	"context"
@@ -7,20 +7,17 @@ import (
 	"github.com/dwprz/prasorganic-user-service/src/interface/service"
 	"github.com/dwprz/prasorganic-user-service/src/model/dto"
 	"github.com/jinzhu/copier"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type UserGrpcImpl struct {
-	logger      *logrus.Logger
 	userService service.User
 	pb.UnimplementedUserServiceServer
 }
 
-func NewUserGrpc(l *logrus.Logger, us service.User) pb.UserServiceServer {
+func NewUserGrpc(us service.User) pb.UserServiceServer {
 	return &UserGrpcImpl{
-		logger:      l,
 		userService: us,
 	}
 }
