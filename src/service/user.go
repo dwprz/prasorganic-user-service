@@ -185,7 +185,7 @@ func (u *UserImpl) VerifyUpdateEmail(ctx context.Context, data *dto.VerifyUpdate
 		return nil, err
 	}
 
-	verifyRes, err := u.grpcClient.Otp.Verify(ctx, &otp.VerifyRequest{
+	verifyRes, err := u.grpcClient.Otp.Verify(ctx, &otp.VerifyReq{
 		Email: data.NewEmail,
 		Otp:   data.Otp,
 	})

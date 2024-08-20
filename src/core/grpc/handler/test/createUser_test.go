@@ -60,7 +60,7 @@ func (c *CreateUserTestSuite) Test_Success() {
 
 	c.userService.Mock.On("Create", mock.Anything, userCreate).Return(nil)
 
-	registerReq := new(pb.RegisterRequest)
+	registerReq := new(pb.RegisterReq)
 	err := copier.Copy(registerReq, userCreate)
 	assert.NoError(c.T(), err)
 
@@ -81,7 +81,7 @@ func (c *CreateUserTestSuite) Test_AlreadyExists() {
 	errorRes := &errors.Response{HttpCode: 409, GrpcCode: codes.AlreadyExists}
 	c.userService.Mock.On("Create", mock.Anything, userCreate).Return(errorRes)
 
-	registerReq := new(pb.RegisterRequest)
+	registerReq := new(pb.RegisterReq)
 	err := copier.Copy(registerReq, userCreate)
 	assert.NoError(c.T(), err)
 

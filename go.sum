@@ -20,6 +20,8 @@ github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f h1:lO4WD4F/r
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f/go.mod h1:cuUVRXasLTGF7a8hSLbxyZXjz+1KgoB3wDUb6vlszIc=
 github.com/dwprz/prasorganic-proto v0.0.21 h1:qHVb1KvmfPKH/c0BgDqWifoPqNys4oK2Dgm63nq0cv8=
 github.com/dwprz/prasorganic-proto v0.0.21/go.mod h1:Rr6U1U11kYTaYCqQd7Kz2X87jtWvHRNbOYROF/Y1NAU=
+github.com/dwprz/prasorganic-proto v0.0.33 h1:5gi+q0PzmGV/zJmZGSQiJYfuSgkeXJQcoey2fbRU5mc=
+github.com/dwprz/prasorganic-proto v0.0.33/go.mod h1:Rr6U1U11kYTaYCqQd7Kz2X87jtWvHRNbOYROF/Y1NAU=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.16.0 h1:zmkK9Ngbjj+K0yRhTVONQh1p/HknKYSlNT+vZCzyokM=
 github.com/fatih/color v1.16.0/go.mod h1:fL2Sau1YI5c0pdGEVCbKQbLXB6edEj1ZgiY4NijnWvE=

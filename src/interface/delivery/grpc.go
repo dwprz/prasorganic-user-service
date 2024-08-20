@@ -7,5 +7,5 @@ import (
 
 type OtpGrpc interface {
 	Send(ctx context.Context, email string) error
-	Verify(ctx context.Context, data *pb.VerifyRequest) (*pb.VerifyResponse, error)
+	Verify(ctx context.Context, data *pb.VerifyReq) (*pb.VerifyRes, error)
 }

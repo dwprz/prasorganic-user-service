@@ -22,7 +22,7 @@ func NewUserGrpc(us service.User) pb.UserServiceServer {
 	}
 }
 
-func (u *UserGrpcImpl) Create(ctx context.Context, ur *pb.RegisterRequest) (*emptypb.Empty, error) {
+func (u *UserGrpcImpl) Create(ctx context.Context, ur *pb.RegisterReq) (*emptypb.Empty, error) {
 	data := &dto.CreateReq{}
 	if err := copier.Copy(data, ur); err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func (u *UserGrpcImpl) Create(ctx context.Context, ur *pb.RegisterRequest) (*emp
 	return nil, nil
 }
 
-func (u *UserGrpcImpl) FindByEmail(ctx context.Context, e *pb.Email) (*pb.FindUserResponse, error) {
+func (u *UserGrpcImpl) FindByEmail(ctx context.Context, e *pb.Email) (*pb.FindUserRes, error) {
 	res, err := u.userService.FindByEmail(ctx, e.Email)
 	if err != nil {
 		return nil, err
@@ -53,10 +53,10 @@ func (u *UserGrpcImpl) FindByEmail(ctx context.Context, e *pb.Email) (*pb.FindUs
 	user.CreatedAt = timestamppb.New(res.CreatedAt)
 	user.UpdatedAt = timestamppb.New(res.UpdatedAt)
 
-	return &pb.FindUserResponse{Data: user}, nil
+	return &pb.FindUserRes{Data: user}, nil
 }
 
-func (u *UserGrpcImpl) FindByRefreshToken(ctx context.Context, t *pb.RefreshToken) (*pb.FindUserResponse, error) {
+func (u *UserGrpcImpl) FindByRefreshToken(ctx context.Context, t *pb.RefreshToken) (*pb.FindUserRes, error) {
 	res, err := u.userService.FindByRefreshToken(ctx, t.Token)
 	if err != nil {
 		return nil, err
@@ -74,10 +74,10 @@ func (u *UserGrpcImpl) FindByRefreshToken(ctx context.Context, t *pb.RefreshToke
 	user.CreatedAt = timestamppb.New(res.CreatedAt)
 	user.UpdatedAt = timestamppb.New(res.UpdatedAt)
 
-	return &pb.FindUserResponse{Data: user}, nil
+	return &pb.FindUserRes{Data: user}, nil
 }
 
-func (u *UserGrpcImpl) Upsert(ctx context.Context, data *pb.LoginWithGoogleRequest) (*pb.User, error) {
+func (u *UserGrpcImpl) Upsert(ctx context.Context, data *pb.LoginWithGoogleReq) (*pb.User, error) {
 	req := new(dto.UpsertReq)
 	if err := copier.Copy(req, data); err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (u *UserGrpcImpl) Upsert(ctx context.Context, data *pb.LoginWithGoogleReque
 	return user, nil
 }
 
-func (u *UserGrpcImpl) AddRefreshToken(ctx context.Context, t *pb.AddRefreshToken) (*emptypb.Empty, error) {
+func (u *UserGrpcImpl) AddRefreshToken(ctx context.Context, t *pb.AddRefreshTokenReq) (*emptypb.Empty, error) {
 	req := &dto.AddRefreshTokenReq{
 		Email:        t.Email,
 		RefreshToken: t.Token,

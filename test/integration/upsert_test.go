@@ -80,7 +80,7 @@ func (u *UpsertTestSuite) Test_Success() {
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	req := &pb.LoginWithGoogleRequest{
+	req := &pb.LoginWithGoogleReq{
 		UserId:       "ynA1nZIULkXLrfy0fvz5t",
 		Email:        "johndoe123@gmail.com",
 		FullName:     "John Doe",
@@ -111,7 +111,7 @@ func (u *UpsertTestSuite) Test_Unauthenticated() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	req := &pb.LoginWithGoogleRequest{
+	req := &pb.LoginWithGoogleReq{
 		UserId:       "ynA1nZIULkXLrfy0fvz5t",
 		Email:        "johndoe123@gmail.com",
 		FullName:     "John Doe",

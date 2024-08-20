@@ -82,7 +82,7 @@ func (c *CreateTestSuite) Test_Success() {
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	req := &pb.RegisterRequest{
+	req := &pb.RegisterReq{
 		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
@@ -100,7 +100,7 @@ func (c *CreateTestSuite) Test_WithouthUserId() {
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	req := &pb.RegisterRequest{
+	req := &pb.RegisterReq{
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
 		Password: "Rahasia",
@@ -119,7 +119,7 @@ func (c *CreateTestSuite) Test_AlreadyExists() {
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	req := &pb.RegisterRequest{
+	req := &pb.RegisterReq{
 		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",
@@ -137,7 +137,7 @@ func (c *CreateTestSuite) Test_Unauthenticated() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	req := &pb.RegisterRequest{
+	req := &pb.RegisterReq{
 		UserId:   "ynA1nZIULkXLrfy0fvz5t",
 		Email:    "johndoe@gmail.com",
 		FullName: "John Doe",

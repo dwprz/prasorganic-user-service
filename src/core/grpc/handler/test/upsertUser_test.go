@@ -50,7 +50,7 @@ func (u *UpsertUserTestSuite) TearDownSuite() {
 }
 
 func (u *UpsertUserTestSuite) Test_Success() {
-	serverReq := &pb.LoginWithGoogleRequest{
+	serverReq := &pb.LoginWithGoogleReq{
 		UserId:       "ynA1nZIULkXLrfy0fvz5t",
 		Email:        "johndoe123@gmail.com",
 		FullName:     "John Doe",

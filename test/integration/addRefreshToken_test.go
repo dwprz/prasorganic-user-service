@@ -81,7 +81,7 @@ func (a *AddRefreshTokenTestSuite) Test_Success() {
 	auth := base64.StdEncoding.EncodeToString([]byte("prasorganic-auth:rahasia"))
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Basic "+auth)
 
-	req := &pb.AddRefreshToken{
+	req := &pb.AddRefreshTokenReq{
 		Email: a.user.Email,
 		Token: a.user.RefreshToken,
 	}
@@ -94,7 +94,7 @@ func (a *AddRefreshTokenTestSuite) Test_Unauthenticated() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	req := &pb.AddRefreshToken{
+	req := &pb.AddRefreshTokenReq{
 		Email: a.user.Email,
 		Token: a.user.RefreshToken,
 	}

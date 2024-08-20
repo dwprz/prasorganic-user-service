@@ -23,12 +23,12 @@ func (o *OtpGrpcMock) Send(ctx context.Context, email string) error {
 	return arguments.Error(0)
 }
 
-func (o *OtpGrpcMock) Verify(ctx context.Context, data *pb.VerifyRequest) (*pb.VerifyResponse, error) {
+func (o *OtpGrpcMock) Verify(ctx context.Context, data *pb.VerifyReq) (*pb.VerifyRes, error) {
 	arguments := o.Mock.Called(ctx, data)
 
 	if arguments.Get(0) == nil {
 		return nil, arguments.Error(1)
 	}
 
-	return arguments.Get(0).(*pb.VerifyResponse), arguments.Error(1)
+	return arguments.Get(0).(*pb.VerifyRes), arguments.Error(1)
 }

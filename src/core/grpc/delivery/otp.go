@@ -41,7 +41,7 @@ func NewOtpGrpc(unaryRequest *interceptor.UnaryRequest) (delivery.OtpGrpc, *grpc
 
 func (u *OtpGrpcImpl) Send(ctx context.Context, email string) error {
 	_, err := cbreaker.OtpGrpc.Execute(func() (any, error) {
-		_, err := u.client.Send(ctx, &pb.SendRequest{
+		_, err := u.client.Send(ctx, &pb.SendReq{
 			Email: email,
 		})
 		return nil, err
@@ -50,9 +50,9 @@ func (u *OtpGrpcImpl) Send(ctx context.Context, email string) error {
 	return err
 }
 
-func (u *OtpGrpcImpl) Verify(ctx context.Context, data *pb.VerifyRequest) (*pb.VerifyResponse, error) {
+func (u *OtpGrpcImpl) Verify(ctx context.Context, data *pb.VerifyReq) (*pb.VerifyRes, error) {
 	res, err := cbreaker.OtpGrpc.Execute(func() (any, error) {
-		res, err := u.client.Verify(ctx, &pb.VerifyRequest{
+		res, err := u.client.Verify(ctx, &pb.VerifyReq{
 			Email: data.Email,
 			Otp:   data.Otp,
 		})
@@ -63,7 +63,7 @@ func (u *OtpGrpcImpl) Verify(ctx context.Context, data *pb.VerifyRequest) (*pb.V
 		return nil, err
 	}
 
-	user, ok := res.(*pb.VerifyResponse)
+	user, ok := res.(*pb.VerifyRes)
 	if !ok {
 		return nil, fmt.Errorf("client.OtpGrpcImpl/Verify | unexpected type: %T", res)
 	}
