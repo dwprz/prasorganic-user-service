@@ -31,6 +31,7 @@ require (
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/imagekit-developer/imagekit-go v0.0.0-20240521071536-1d7e6e67fcd7 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
+	github.com/magefile/mage v1.9.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -48,6 +49,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
+	go.elastic.co/ecslogrus v1.0.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect

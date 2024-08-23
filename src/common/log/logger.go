@@ -1,8 +1,10 @@
 package log
 
 import (
-	"github.com/sirupsen/logrus"
 	"os"
+
+	"github.com/sirupsen/logrus"
+	"go.elastic.co/ecslogrus"
 )
 
 var Logger = logrus.New()
@@ -10,13 +12,8 @@ var Logger = logrus.New()
 func init() {
 	appStatus := os.Getenv("PRASORGANIC_APP_STATUS")
 
-	Logger.SetFormatter(&StackFormatter{
-		logrus.TextFormatter{
-			DisableColors:    false,
-			DisableTimestamp: false,
-			FullTimestamp:    true,
-			DisableQuote:     true,
-		},
+	Logger.SetFormatter(&ecslogrus.Formatter{
+		PrettyPrint: true,
 	})
 
 	Logger.SetLevel(logrus.InfoLevel)
@@ -25,15 +22,13 @@ func init() {
 		return
 	}
 
-	if _, err := os.Stat("./app.log"); os.IsNotExist(err) {
-		if err := os.Mkdir("./tmp", os.ModePerm); err != nil {
-			Logger.WithFields(logrus.Fields{"location": "log.init", "section": "os.Mkdir"}).Fatal(err)
-		}
-	}
+	Logger.SetFormatter(&ecslogrus.Formatter{
+		PrettyPrint: false,
+	})
 
 	file, err := os.OpenFile("./app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		Logger.WithFields(logrus.Fields{"location": "log.init", "section": "helper.CheckExistDir"}).Fatal(err)
+		Logger.WithFields(logrus.Fields{"location": "log.init", "section": "os.OpenFile"}).Fatal(err)
 	}
 
 	Logger.Out = file
