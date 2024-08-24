@@ -12,6 +12,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/imagekit-developer/imagekit-go/api/uploader"
+	"google.golang.org/grpc/status"
 )
 
 func (m *Middleware) Error(c *fiber.Ctx, err error) error {
@@ -27,6 +28,10 @@ func (m *Middleware) Error(c *fiber.Ctx, err error) error {
 		if ok && req.FileId != "" {
 			go imagekit.IK.Media.DeleteFile(context.Background(), req.FileId)
 		}
+	}
+
+	if st, ok := status.FromError(err); ok {
+		return restful.HandleGrpcError(c, st)
 	}
 
 	if validationError, ok := err.(validator.ValidationErrors); ok {

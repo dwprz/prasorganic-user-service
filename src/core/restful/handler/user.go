@@ -107,7 +107,7 @@ func (u *User) UpdateEmail(c *fiber.Ctx) error {
 		Expires:  time.Now().Add(10 * time.Minute),
 	})
 
-	return c.Status(200).JSON(fiber.Map{"data": "Successfully requested email update"})
+	return c.Status(200).JSON(fiber.Map{"data": "successfully requested email update"})
 }
 
 func (u *User) VerifyUpdateEmail(c *fiber.Ctx) error {
