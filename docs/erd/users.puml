@@ -1,0 +1,24 @@
+@startuml
+
+enum UserRole {
+    USER
+    ADMIN
+    SUPER_ADMIN
+}
+
+entity "users" as User {
+        *user_id VARCHAR(100) <<nanoid>> <<PK>>,
+        --
+        email VARCHAR(100) <<not null>> <<unique>>,
+        full_name VARCHAR(100) <<nullable>>,
+        photo_profile VARCHAR(500) <<nullable>>,
+        whatsapp VARCHAR(20) <<nullable>>,
+        role UserRole <<not null>> default(USER),
+        password VARCHAR(100) <<nullable>>,
+        photo_profile VARCHAR(100) <<nullable>>,
+        refresh_token VARCHAR(500) <<nullable>> <<unique>>,
+        created_at TIMESTAMP default(CURRENT_TIMESTAMP),
+        updated_at TIMESTAMP <<nullable>>
+}
+
+@enduml
