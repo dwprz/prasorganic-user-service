@@ -36,11 +36,14 @@ func main() {
 	closeCH := make(chan struct{})
 	handleCloseApp(closeCH)
 
-	postgresDb := database.NewPostgres()
-	redisDb := database.NewRedisCluster()
+	postgresDB := database.NewPostgres()
+	defer database.ClosePostgres(postgresDB)
 
-	userCache := cache.NewUser(redisDb)
-	userRepository := repository.NewUser(postgresDb, userCache)
+	redisDB := database.NewRedisCluster()
+	defer redisDB.Close()
+
+	userCache := cache.NewUser(redisDB)
+	userRepository := repository.NewUser(postgresDB, userCache)
 
 	grpcClient := grpc.InitClient()
 	defer grpcClient.Close()

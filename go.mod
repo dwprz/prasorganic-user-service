@@ -7,13 +7,16 @@ require (
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/h2non/filetype v1.1.3
 	github.com/hashicorp/vault/api v1.14.0
+	github.com/imagekit-developer/imagekit-go v0.0.0-20240521071536-1d7e6e67fcd7
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/jinzhu/copier v0.4.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/sony/gobreaker/v2 v2.0.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
+	go.elastic.co/ecslogrus v1.0.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
@@ -28,8 +31,6 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/h2non/filetype v1.1.3 // indirect
-	github.com/imagekit-developer/imagekit-go v0.0.0-20240521071536-1d7e6e67fcd7 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/magefile/mage v1.9.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
@@ -49,7 +50,6 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	go.elastic.co/ecslogrus v1.0.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
